@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Omer Studio — Dashboard</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700&family=Playfair+Display:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://accounts.google.com/gsi/client" async defer></script>
 <style>
 :root{
   --bg:#FAFAF8;--sidebar-bg:#1A1A1A;--sidebar-text:#B8B8B0;--sidebar-active:#FFF;
@@ -17,6 +18,7 @@
   --tag-finance:#5B8C5A;--tag-finance-soft:#EDF5ED;
   --tag-strategy:#5B7B9C;--tag-strategy-soft:#EDF2F7;
   --shadow-md:0 4px 12px rgba(0,0,0,.06);--shadow-lg:0 12px 40px rgba(0,0,0,.12);--radius:12px;--radius-sm:8px;
+  --danger:#C45B5B;--danger-soft:#FCEAEA;
 }
 *{margin:0;padding:0;box-sizing:border-box}
 body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text-primary);display:flex;height:100vh;overflow:hidden;font-size:14px}
@@ -36,9 +38,10 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text-prim
 .sidebar-item .badge{margin-left:auto;background:var(--accent);color:#fff;font-size:10px;font-weight:600;padding:2px 7px;border-radius:10px}
 .sidebar-spacer{flex:1}
 .sidebar-user{padding:16px 20px;border-top:1px solid rgba(255,255,255,.06);display:flex;align-items:center;gap:10px}
-.sidebar-user .avatar{width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,var(--accent),#D4A843);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:600;font-size:13px}
-.sidebar-user .user-info{color:var(--sidebar-text);font-size:12px}
-.sidebar-user .user-name{color:#fff;font-weight:500;font-size:13px}
+.sidebar-user .avatar{width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,var(--accent),#D4A843);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:600;font-size:13px;overflow:hidden}
+.sidebar-user .avatar img{width:100%;height:100%;object-fit:cover;border-radius:50%}
+.sidebar-user .user-info{color:var(--sidebar-text);font-size:12px;flex:1;min-width:0}
+.sidebar-user .user-name{color:#fff;font-weight:500;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .main{flex:1;display:flex;flex-direction:column;overflow:hidden}
 .topbar{height:60px;border-bottom:1px solid var(--card-border);background:#fff;display:flex;align-items:center;padding:0 32px;gap:16px;flex-shrink:0}
 .topbar-breadcrumb{font-size:13px;color:var(--text-muted);display:flex;align-items:center;gap:6px}
@@ -51,7 +54,8 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text-prim
 .topbar-btn{width:36px;height:36px;border-radius:var(--radius-sm);border:1px solid var(--card-border);background:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--text-secondary);transition:all .15s}
 .topbar-btn:hover{border-color:var(--accent);color:var(--accent)}
 .content{flex:1;overflow-y:auto;padding:28px 32px}
-.page-header{margin-bottom:28px}
+.page-header{margin-bottom:28px;display:flex;align-items:flex-start;justify-content:space-between;gap:16px}
+.page-header-text{flex:1}
 .page-header h1{font-family:'Playfair Display',serif;font-size:28px;font-weight:600;letter-spacing:-.5px;margin-bottom:6px}
 .page-header p{color:var(--text-secondary);font-size:14px}
 .loading{display:flex;align-items:center;justify-content:center;height:200px;color:var(--text-muted);font-size:14px;gap:10px}
@@ -102,7 +106,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text-prim
 .task-row{display:flex;align-items:center;padding:14px 20px;gap:14px;border-bottom:1px solid var(--card-border);transition:background .1s}
 .task-row:last-child{border-bottom:none}
 .task-row:hover{background:var(--bg)}
-.task-check{width:18px;height:18px;border-radius:50%;border:2px solid var(--card-border);flex-shrink:0;display:flex;align-items:center;justify-content:center;transition:all .15s}
+.task-check{width:18px;height:18px;border-radius:50%;border:2px solid var(--card-border);flex-shrink:0;display:flex;align-items:center;justify-content:center;transition:all .15s;cursor:pointer}
 .task-row:hover .task-check{border-color:var(--accent)}
 .task-check.done{background:var(--success);border-color:var(--success)}
 .task-info{flex:1;min-width:0}
@@ -132,8 +136,6 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text-prim
 .empty-state p{font-size:13px}
 .back-link{display:inline-flex;align-items:center;gap:6px;font-size:13px;color:var(--text-muted);cursor:pointer;margin-bottom:20px;transition:color .15s}
 .back-link:hover{color:var(--accent)}
-
-/* Skills Matrix */
 .skills-overview{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:28px}
 .skill-overview-card{background:var(--card-bg);border:1px solid var(--card-border);border-radius:var(--radius-sm);padding:16px;text-align:center}
 .skill-overview-val{font-family:'Playfair Display',serif;font-size:24px;font-weight:600;margin-bottom:2px}
@@ -154,11 +156,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text-prim
 .skill-name{font-size:14px;font-weight:500;flex:1}
 .skill-level{display:flex;gap:4px;align-items:center;margin-right:8px}
 .skill-dot{width:10px;height:10px;border-radius:50%;background:var(--card-border);transition:background .3s}
-.skill-dot.filled-1{background:#C45B5B}
-.skill-dot.filled-2{background:var(--warning)}
-.skill-dot.filled-3{background:#D4A843}
-.skill-dot.filled-4{background:#8CAA5B}
-.skill-dot.filled-5{background:var(--success)}
+.skill-dot.filled-1{background:#C45B5B}.skill-dot.filled-2{background:var(--warning)}.skill-dot.filled-3{background:#D4A843}.skill-dot.filled-4{background:#8CAA5B}.skill-dot.filled-5{background:var(--success)}
 .skill-level-label{font-size:11px;color:var(--text-muted);min-width:65px;text-align:right}
 .skill-bar-wrap{flex:1;max-width:200px}
 .skill-bar{height:6px;background:var(--bg);border-radius:3px;overflow:hidden}
@@ -167,8 +165,6 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text-prim
 .skill-card.expanded .skill-notes{display:block}
 .skill-chevron{color:var(--text-muted);transition:transform .2s;flex-shrink:0}
 .skill-card.expanded .skill-chevron{transform:rotate(180deg)}
-
-/* Reference Board */
 .ref-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px}
 .ref-card{background:var(--card-bg);border:1px solid var(--card-border);border-radius:var(--radius);overflow:hidden;cursor:pointer;transition:all .25s}
 .ref-card:hover{box-shadow:var(--shadow-md);border-color:transparent;transform:translateY(-2px)}
@@ -182,18 +178,16 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text-prim
 .ref-card-meta{font-size:11px;color:var(--text-muted)}
 .ref-tags{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
 .ref-tag{padding:2px 8px;border-radius:12px;font-size:10.5px;background:var(--bg);color:var(--text-muted);border:1px solid var(--card-border)}
-
-/* Modal */
 .modal-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.5);z-index:1000;display:none;align-items:center;justify-content:center;padding:40px;backdrop-filter:blur(4px)}
 .modal-overlay.open{display:flex}
 .modal{background:var(--card-bg);border-radius:16px;max-width:680px;width:100%;max-height:85vh;overflow-y:auto;box-shadow:var(--shadow-lg);animation:modalIn .25s ease}
 @keyframes modalIn{from{opacity:0;transform:scale(.95) translateY(10px)}to{opacity:1;transform:scale(1) translateY(0)}}
 .modal-img{width:100%;max-height:360px;object-fit:cover;border-radius:16px 16px 0 0;display:block}
-.modal-img-placeholder{width:100%;height:200px;background:linear-gradient(135deg,var(--accent-soft),var(--info-soft));border-radius:16px 16px 0 0;display:flex;align-items:center;justify-content:center;color:var(--text-muted)}
+.modal-img-placeholder{width:100%;height:200px;background:linear-gradient(135deg,var(--accent-soft),var(--info-soft));border-radius:16px 16px 0 0;display:flex;align-items:center;justify-content:center}
 .modal-body{padding:28px}
 .modal-close{position:absolute;top:16px;right:16px;width:36px;height:36px;border-radius:50%;background:rgba(0,0,0,.5);color:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer;border:none;font-size:18px;transition:background .15s;z-index:1}
 .modal-close:hover{background:rgba(0,0,0,.7)}
-.modal-cat{display:inline-block;padding:4px 12px;border-radius:20px;font-size:11px;font-weight:600;background:var(--accent-soft);color:var(--accent);margin-bottom:12px}
+.modal-cat{display:inline-block;padding:4px 12px;border-radius:20px;font-size:11px;font-weight:600;margin-bottom:12px}
 .modal-body h2{font-family:'Playfair Display',serif;font-size:22px;font-weight:600;margin-bottom:14px;letter-spacing:-.3px}
 .modal-notes{font-size:14px;line-height:1.7;color:var(--text-secondary);margin-bottom:20px}
 .modal-section{margin-bottom:20px}
@@ -203,7 +197,40 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text-prim
 .modal-link{display:inline-flex;align-items:center;gap:6px;padding:8px 14px;border-radius:var(--radius-sm);font-size:13px;color:var(--accent);border:1px solid var(--accent-soft);text-decoration:none;transition:all .15s;margin-right:8px;margin-bottom:8px}
 .modal-link:hover{background:var(--accent-soft)}
 .modal-meta{display:flex;gap:20px;padding-top:16px;border-top:1px solid var(--card-border);font-size:12px;color:var(--text-muted)}
-
+/* Add Button */
+.btn-add{display:inline-flex;align-items:center;gap:6px;padding:8px 18px;border-radius:var(--radius-sm);font-size:13px;font-weight:500;cursor:pointer;border:none;transition:all .15s;background:var(--accent);color:#fff;font-family:'DM Sans',sans-serif}
+.btn-add:hover{background:#B8875E;box-shadow:var(--shadow-md)}
+.btn-add:disabled{opacity:.5;cursor:not-allowed}
+.btn-add .ic svg{stroke:#fff}
+/* Sign In */
+.signin-btn{display:flex;align-items:center;gap:8px;padding:9px 12px;border-radius:var(--radius-sm);color:var(--sidebar-text);cursor:pointer;transition:all .15s;font-size:13px;border:1px solid rgba(255,255,255,.12);margin:0 16px 8px;background:transparent}
+.signin-btn:hover{background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.2);color:var(--sidebar-active)}
+/* Form Modal */
+.form-modal{max-width:520px}
+.form-modal .modal-body{padding:24px 28px 28px}
+.form-title{font-family:'Playfair Display',serif;font-size:20px;font-weight:600;margin-bottom:20px;letter-spacing:-.3px}
+.form-group{margin-bottom:16px}
+.form-label{display:block;font-size:12px;font-weight:500;color:var(--text-secondary);margin-bottom:6px;text-transform:uppercase;letter-spacing:.3px}
+.form-input,.form-select,.form-textarea{width:100%;padding:10px 14px;border:1px solid var(--card-border);border-radius:var(--radius-sm);font-size:13.5px;font-family:'DM Sans',sans-serif;color:var(--text-primary);background:var(--card-bg);transition:border-color .15s;outline:none}
+.form-input:focus,.form-select:focus,.form-textarea:focus{border-color:var(--accent)}
+.form-input::placeholder,.form-textarea::placeholder{color:var(--text-muted)}
+.form-textarea{resize:vertical;min-height:80px}
+.form-select{cursor:pointer;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%239B9B93' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.form-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:24px;padding-top:20px;border-top:1px solid var(--card-border)}
+.btn-cancel{padding:8px 18px;border-radius:var(--radius-sm);font-size:13px;font-weight:500;cursor:pointer;border:1px solid var(--card-border);background:var(--card-bg);color:var(--text-secondary);font-family:'DM Sans',sans-serif;transition:all .15s}
+.btn-cancel:hover{border-color:var(--text-muted)}
+.btn-submit{padding:8px 22px;border-radius:var(--radius-sm);font-size:13px;font-weight:500;cursor:pointer;border:none;background:var(--accent);color:#fff;font-family:'DM Sans',sans-serif;transition:all .15s}
+.btn-submit:hover{background:#B8875E}
+.btn-submit:disabled{opacity:.5;cursor:not-allowed}
+.form-hint{font-size:11px;color:var(--text-muted);margin-top:4px}
+.form-error{color:var(--danger);font-size:12px;margin-top:4px;display:none}
+/* Toast */
+.toast{position:fixed;bottom:24px;right:24px;padding:14px 22px;border-radius:var(--radius);background:var(--sidebar-bg);color:#fff;font-size:13px;font-weight:500;box-shadow:var(--shadow-lg);z-index:2000;transform:translateY(100px);opacity:0;transition:all .3s ease;display:flex;align-items:center;gap:10px}
+.toast.show{transform:translateY(0);opacity:1}
+.toast.success{background:var(--success)}
+.toast.error{background:var(--danger)}
+.toast .ic svg{stroke:#fff;width:16px;height:16px}
 @keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
 .content .screen.active{animation:fadeIn .3s ease}
 ::-webkit-scrollbar{width:6px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:var(--card-border);border-radius:3px}
@@ -238,6 +265,8 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text-prim
   <symbol id="i-chevron-down" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></symbol>
   <symbol id="i-star" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></symbol>
   <symbol id="i-external" viewBox="0 0 24 24"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></symbol>
+  <symbol id="i-log-in" viewBox="0 0 24 24"><path d="M15 3h4a2 2 0 012 2v14a2 2 0 01-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></symbol>
+  <symbol id="i-log-out" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></symbol>
 </svg>
 
 <nav class="sidebar">
@@ -267,9 +296,12 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text-prim
     <div class="sidebar-item"><span class="ic"><svg><use href="#i-drive"/></svg></span> Google Drive</div>
     <div class="sidebar-item"><span class="ic"><svg><use href="#i-settings"/></svg></span> Settings</div>
   </div>
-  <div class="sidebar-user">
-    <div class="avatar">L</div>
-    <div class="user-info"><div class="user-name">Lotan & Omer</div><div>Workspace</div></div>
+  <div id="auth-area">
+    <div class="signin-btn" onclick="handleSignIn()"><span class="ic"><svg><use href="#i-log-in"/></svg></span> Sign in with Google</div>
+  </div>
+  <div class="sidebar-user" id="sidebar-user">
+    <div class="avatar" id="user-avatar">?</div>
+    <div class="user-info"><div class="user-name" id="user-display-name">Not signed in</div><div id="user-email-display">View only</div></div>
   </div>
 </nav>
 
@@ -281,9 +313,8 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text-prim
     <div class="topbar-btn"><span class="ic"><svg><use href="#i-bell"/></svg></span></div>
   </div>
   <div class="content">
-    <!-- DASHBOARD -->
     <div class="screen active" id="s-dashboard">
-      <div class="page-header"><h1 id="greeting">Good morning</h1><p>Here's what's happening across Omer's business today</p></div>
+      <div class="page-header"><div class="page-header-text"><h1 id="greeting">Good morning</h1><p>Here's what's happening across Omer's business today</p></div></div>
       <div class="dash-grid">
         <div class="stat-card"><div class="stat-icon blue"><span class="ic ic-lg"><svg><use href="#i-folder"/></svg></span></div><div class="stat-label">Active Projects</div><div class="stat-value" id="stat-projects">—</div><div class="stat-change" id="stat-projects-info">Loading...</div></div>
         <div class="stat-card"><div class="stat-icon warm"><span class="ic ic-lg"><svg><use href="#i-clock"/></svg></span></div><div class="stat-label">In Progress</div><div class="stat-value" id="stat-progress">—</div><div class="stat-change" id="stat-progress-info"></div></div>
@@ -295,28 +326,27 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text-prim
       <div class="section-header"><h2>Recent Tasks</h2><span class="view-all" onclick="nav('all-tasks')">View all →</span></div>
       <div id="tasks-list"><div class="loading"><div class="spinner"></div> Loading...</div></div>
     </div>
-    <!-- ALL TASKS -->
     <div class="screen" id="s-all-tasks">
-      <div class="page-header"><h1>All Tasks</h1><p id="all-tasks-subtitle"></p></div>
+      <div class="page-header"><div class="page-header-text"><h1>All Tasks</h1><p id="all-tasks-subtitle"></p></div><button class="btn-add" onclick="openAddForm('task')" id="btn-add-task" style="display:none"><span class="ic ic-sm"><svg><use href="#i-plus"/></svg></span> Add Task</button></div>
       <div class="filter-bar" id="task-filters"></div>
       <div id="all-tasks-list"></div>
     </div>
-    <!-- REFERENCES -->
     <div class="screen" id="s-references">
-      <div class="page-header"><h1>Reference Board</h1><p id="ref-subtitle">Visual inspiration and research collected by the team</p></div>
+      <div class="page-header"><div class="page-header-text"><h1>Reference Board</h1><p id="ref-subtitle">Visual inspiration and research collected by the team</p></div><button class="btn-add" onclick="openAddForm('reference')" id="btn-add-ref" style="display:none"><span class="ic ic-sm"><svg><use href="#i-plus"/></svg></span> Add Reference</button></div>
       <div class="filter-bar" id="ref-filters"></div>
       <div class="ref-grid" id="ref-grid"></div>
     </div>
-    <!-- SKILLS MATRIX -->
     <div class="screen" id="s-skills">
-      <div class="page-header"><h1>Skills Matrix</h1><p id="skills-subtitle">Tracking Omer's skills and learning goals</p></div>
+      <div class="page-header"><div class="page-header-text"><h1>Skills Matrix</h1><p id="skills-subtitle">Tracking Omer's skills and learning goals</p></div><button class="btn-add" onclick="openAddForm('skill')" id="btn-add-skill" style="display:none"><span class="ic ic-sm"><svg><use href="#i-plus"/></svg></span> Add Skill</button></div>
       <div class="skills-overview" id="skills-overview"></div>
       <div class="filter-bar" id="skills-filters"></div>
       <div id="skills-list"></div>
     </div>
-    <!-- PROJECT DETAIL -->
     <div class="screen" id="s-project">
-      <div class="back-link" onclick="nav('dashboard')"><span class="ic ic-sm"><svg><use href="#i-arrow-left"/></svg></span> Back to Dashboard</div>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
+        <div class="back-link" onclick="nav('dashboard')" style="margin-bottom:0"><span class="ic ic-sm"><svg><use href="#i-arrow-left"/></svg></span> Back to Dashboard</div>
+        <button class="btn-add" onclick="openAddForm('task')" id="btn-add-project-task" style="display:none"><span class="ic ic-sm"><svg><use href="#i-plus"/></svg></span> Add Task</button>
+      </div>
       <div class="project-detail-header" id="project-header"></div>
       <div class="project-detail-stats" id="project-stats"></div>
       <div class="section-header"><h2>Tasks</h2></div>
@@ -326,14 +356,19 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text-prim
   </div>
 </div>
 
-<!-- MODAL -->
 <div class="modal-overlay" id="modal-overlay" onclick="if(event.target===this)closeModal()">
   <div class="modal" style="position:relative" id="modal"></div>
 </div>
+<div class="modal-overlay" id="form-overlay" onclick="if(event.target===this)closeForm()">
+  <div class="modal form-modal" style="position:relative" id="form-modal"></div>
+</div>
+<div class="toast" id="toast"></div>
 
 <script>
 const SHEET_ID='1x4muffjvZhrdbvsrBdTgkloo441-y1ThYGsgKKaT3mc';
 const SHEET_GIDS={Projects:997517085,Tasks:1481389517,References:1244683688,Platforms:1804897256,Tools:436378319,Skills:2054960753};
+const OAUTH_CLIENT_ID='98346290791-k6cn2qf20p1enp9mj3j3qoglrchcb9qh.apps.googleusercontent.com';
+const SCOPES='https://www.googleapis.com/auth/spreadsheets';
 const ICONS={compass:'#i-compass',store:'#i-store',cpu:'#i-cpu',map:'#i-map',image:'#i-image',zap:'#i-zap',folder:'#i-folder',default:'#i-folder'};
 const COLORS={strategy:'strategy',marketing:'marketing',creative:'creative',finance:'finance',revenue:'marketing',tools:'creative',research:'creative',development:'finance',planning:'strategy'};
 const CAT_COLORS={'Style Reference':'var(--accent)','Packaging':'var(--success)','Technique':'var(--info)','Color Palette':'var(--tag-marketing)','Branding':'var(--warning)'};
@@ -344,6 +379,48 @@ let FILTERS={status:'all',assignee:'all'};
 let REF_FILTER='all';
 let currentProjectId=null;
 
+// AUTH
+let accessToken=null;let tokenClient=null;let currentUser=null;
+
+function initAuth(){
+  tokenClient=google.accounts.oauth2.initTokenClient({
+    client_id:OAUTH_CLIENT_ID,scope:SCOPES,
+    callback:(resp)=>{
+      if(resp.error)return;
+      accessToken=resp.access_token;
+      fetch('https://www.googleapis.com/oauth2/v3/userinfo',{headers:{'Authorization':'Bearer '+accessToken}})
+        .then(r=>r.json()).then(info=>{currentUser={name:info.name||info.email,email:info.email,picture:info.picture};updateAuthUI();showToast('Signed in as '+currentUser.name,'success')}).catch(()=>updateAuthUI());
+    }
+  });
+}
+function handleSignIn(){if(!tokenClient){showToast('Google auth loading...','error');return}tokenClient.requestAccessToken({prompt:'consent'})}
+function handleSignOut(){if(accessToken)google.accounts.oauth2.revoke(accessToken);accessToken=null;currentUser=null;updateAuthUI();showToast('Signed out','')}
+
+function updateAuthUI(){
+  const aa=document.getElementById('auth-area');
+  const btns=document.querySelectorAll('.btn-add');
+  if(accessToken&&currentUser){
+    aa.innerHTML='<div class="signin-btn" onclick="handleSignOut()" style="gap:6px"><span class="ic ic-sm"><svg><use href="#i-log-out"/></svg></span> Sign out</div>';
+    document.getElementById('user-avatar').innerHTML=currentUser.picture?'<img src="'+currentUser.picture+'" alt="">':currentUser.name[0];
+    document.getElementById('user-display-name').textContent=currentUser.name;
+    document.getElementById('user-email-display').textContent=currentUser.email;
+    btns.forEach(b=>b.style.display='inline-flex');
+  }else{
+    aa.innerHTML='<div class="signin-btn" onclick="handleSignIn()"><span class="ic"><svg><use href="#i-log-in"/></svg></span> Sign in with Google</div>';
+    document.getElementById('user-avatar').innerHTML='?';
+    document.getElementById('user-display-name').textContent='Not signed in';
+    document.getElementById('user-email-display').textContent='View only';
+    btns.forEach(b=>b.style.display='none');
+  }
+}
+function waitForGIS(){if(window.google&&google.accounts&&google.accounts.oauth2)initAuth();else setTimeout(waitForGIS,200)}
+waitForGIS();
+
+// TOAST
+let toastTimer;
+function showToast(msg,type){const t=document.getElementById('toast');t.className='toast'+(type?' '+type:'');const ic=type==='success'?'#i-check-circle':type==='error'?'#i-x':'#i-check-circle';t.innerHTML='<span class="ic"><svg><use href="'+ic+'"/></svg></span> '+msg;clearTimeout(toastTimer);requestAnimationFrame(()=>t.classList.add('show'));toastTimer=setTimeout(()=>t.classList.remove('show'),3000)}
+
+// CSV
 function parseCSV(t){
   if(!t||!t.trim())return[];
   const lines=[];let cur='',inQ=false;
@@ -353,8 +430,8 @@ function parseCSV(t){
   const h=sp(lines[0]);return lines.slice(1).map(l=>{const v=sp(l),o={};h.forEach((k,i)=>{o[k]=v[i]||''});return o});
 }
 async function fetchSheet(n){
-  try{const r=await fetch(`https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(n)}`);if(!r.ok)throw new Error;return parseCSV(await r.text())}
-  catch(e){try{const g=SHEET_GIDS[n];if(g!=null){const r=await fetch(`https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv&gid=${g}`);if(!r.ok)throw new Error;return parseCSV(await r.text())}throw e}catch(e2){console.error(`Error fetching ${n}:`,e2);return[]}}
+  try{const r=await fetch('https://docs.google.com/spreadsheets/d/'+SHEET_ID+'/gviz/tq?tqx=out:csv&sheet='+encodeURIComponent(n));if(!r.ok)throw new Error;return parseCSV(await r.text())}
+  catch(e){try{const g=SHEET_GIDS[n];if(g!=null){const r=await fetch('https://docs.google.com/spreadsheets/d/'+SHEET_ID+'/export?format=csv&gid='+g);if(!r.ok)throw new Error;return parseCSV(await r.text())}throw e}catch(e2){console.error('Error fetching '+n+':',e2);return[]}}
 }
 async function loadAllData(){
   const r=await Promise.all(['Projects','Tasks','References','Platforms','Tools','Skills'].map(fetchSheet));
@@ -366,6 +443,148 @@ function gc(c){return COLORS[(c||'').toLowerCase()]||'strategy'}
 function gi(n){return ICONS[n]||ICONS.default}
 function isOverdue(d){return d&&d<new Date().toISOString().split('T')[0]}
 
+// WRITE TO SHEETS
+async function appendToSheet(sheetName,values){
+  if(!accessToken){showToast('Please sign in first','error');return false}
+  const url='https://sheets.googleapis.com/v4/spreadsheets/'+SHEET_ID+'/values/'+encodeURIComponent(sheetName+'!A:Z')+':append?valueInputOption=USER_ENTERED&insertDataOption=INSERT_ROWS';
+  try{
+    const resp=await fetch(url,{method:'POST',headers:{'Authorization':'Bearer '+accessToken,'Content-Type':'application/json'},body:JSON.stringify({values:[values]})});
+    if(!resp.ok){if(resp.status===401){accessToken=null;updateAuthUI();showToast('Session expired — please sign in again','error');return false}const err=await resp.json();throw new Error(err.error?.message||'Write failed')}
+    return true;
+  }catch(e){showToast('Error: '+e.message,'error');return false}
+}
+
+async function updateCell(sheetName,range,value){
+  if(!accessToken){showToast('Please sign in first','error');return false}
+  const url='https://sheets.googleapis.com/v4/spreadsheets/'+SHEET_ID+'/values/'+encodeURIComponent(sheetName+'!'+range)+'?valueInputOption=USER_ENTERED';
+  try{
+    const resp=await fetch(url,{method:'PUT',headers:{'Authorization':'Bearer '+accessToken,'Content-Type':'application/json'},body:JSON.stringify({values:[[value]]})});
+    if(!resp.ok){if(resp.status===401){accessToken=null;updateAuthUI();showToast('Session expired — sign in again','error');return false}throw new Error('Update failed')}
+    return true;
+  }catch(e){showToast('Error: '+e.message,'error');return false}
+}
+
+async function refreshData(){
+  await loadAllData();
+  const active=document.querySelector('.screen.active');
+  if(active){
+    if(active.id==='s-all-tasks')renderAllTasks();
+    else if(active.id==='s-references')renderReferences();
+    else if(active.id==='s-skills')renderSkills();
+    else if(active.id==='s-project'&&currentProjectId)showProject(currentProjectId);
+  }
+}
+
+// TOGGLE TASK STATUS
+async function toggleTaskStatus(taskId){
+  if(!accessToken){showToast('Sign in to update tasks','error');return}
+  const task=DATA.tasks.find(t=>t.id===taskId);if(!task)return;
+  const rowIndex=DATA.tasks.indexOf(task)+2;
+  const newStatus=task.status==='Done'?'To Do':'Done';
+  const ok=await updateCell('Tasks','F'+rowIndex,newStatus);
+  if(ok){
+    task.status=newStatus;
+    showToast(newStatus==='Done'?'Task completed!':'Task reopened','success');
+    const active=document.querySelector('.screen.active');
+    if(active.id==='s-dashboard')renderDashboard();
+    else if(active.id==='s-all-tasks')renderAllTasks();
+    else if(active.id==='s-project'&&currentProjectId)showProject(currentProjectId);
+  }
+}
+
+// ADD FORMS
+function openAddForm(type){
+  if(!accessToken){showToast('Please sign in to add items','error');return}
+  const fm=document.getElementById('form-modal');
+  if(type==='task'){
+    const po=DATA.projects.map(p=>'<option value="'+p.id+'"'+(currentProjectId&&p.id===currentProjectId?' selected':'')+'>'+p.name+'</option>').join('');
+    fm.innerHTML='<div class="modal-body"><div class="form-title">Add New Task</div>'+
+      '<div class="form-group"><label class="form-label">Task Name *</label><input class="form-input" id="f-task-name" placeholder="What needs to be done?"></div>'+
+      '<div class="form-row"><div class="form-group"><label class="form-label">Project *</label><select class="form-select" id="f-task-project"><option value="">Select project</option>'+po+'</select></div>'+
+      '<div class="form-group"><label class="form-label">Assigned To</label><select class="form-select" id="f-task-assignee"><option value="Omer">Omer</option><option value="Lotan">Lotan</option></select></div></div>'+
+      '<div class="form-row"><div class="form-group"><label class="form-label">Status</label><select class="form-select" id="f-task-status"><option value="To Do">To Do</option><option value="In Progress">In Progress</option><option value="Review">Review</option><option value="Done">Done</option></select></div>'+
+      '<div class="form-group"><label class="form-label">Due Date</label><input class="form-input" id="f-task-due" type="date"></div></div>'+
+      '<div class="form-group"><label class="form-label">Description</label><textarea class="form-textarea" id="f-task-desc" placeholder="Optional details..."></textarea></div>'+
+      '<div id="form-error" class="form-error"></div>'+
+      '<div class="form-actions"><button class="btn-cancel" onclick="closeForm()">Cancel</button><button class="btn-submit" id="f-submit" onclick="submitTask()">Add Task</button></div></div>';
+  }else if(type==='reference'){
+    fm.innerHTML='<div class="modal-body"><div class="form-title">Add Reference</div>'+
+      '<div class="form-group"><label class="form-label">Title *</label><input class="form-input" id="f-ref-title" placeholder="Reference name"></div>'+
+      '<div class="form-group"><label class="form-label">Category</label><select class="form-select" id="f-ref-cat"><option value="">Select category</option><option>Style Reference</option><option>Packaging</option><option>Technique</option><option>Color Palette</option><option>Branding</option></select></div>'+
+      '<div class="form-group"><label class="form-label">Notes</label><textarea class="form-textarea" id="f-ref-notes" placeholder="Why is this inspiring?"></textarea></div>'+
+      '<div class="form-group"><label class="form-label">Tags</label><input class="form-input" id="f-ref-tags" placeholder="comma, separated, tags"><div class="form-hint">Separate tags with commas</div></div>'+
+      '<div class="form-group"><label class="form-label">Image URL</label><input class="form-input" id="f-ref-img" placeholder="https://..."></div>'+
+      '<div class="form-row"><div class="form-group"><label class="form-label">Link URL</label><input class="form-input" id="f-ref-link" placeholder="https://..."></div>'+
+      '<div class="form-group"><label class="form-label">Link Title</label><input class="form-input" id="f-ref-linktitle" placeholder="e.g. Behance"></div></div>'+
+      '<div id="form-error" class="form-error"></div>'+
+      '<div class="form-actions"><button class="btn-cancel" onclick="closeForm()">Cancel</button><button class="btn-submit" id="f-submit" onclick="submitReference()">Add Reference</button></div></div>';
+  }else if(type==='skill'){
+    fm.innerHTML='<div class="modal-body"><div class="form-title">Add Skill</div>'+
+      '<div class="form-group"><label class="form-label">Skill Name *</label><input class="form-input" id="f-skill-name" placeholder="e.g. Blender, After Effects"></div>'+
+      '<div class="form-row"><div class="form-group"><label class="form-label">Type</label><select class="form-select" id="f-skill-type"><option value="">Select type</option><option>Creative</option><option>Technical</option><option>Tools</option><option>Business</option></select></div>'+
+      '<div class="form-group"><label class="form-label">Level (1-5)</label><select class="form-select" id="f-skill-level"><option value="1">1 — Beginner</option><option value="2">2 — Learning</option><option value="3" selected>3 — Intermediate</option><option value="4">4 — Advanced</option><option value="5">5 — Expert</option></select></div></div>'+
+      '<div class="form-group"><label class="form-label">Notes</label><textarea class="form-textarea" id="f-skill-notes" placeholder="Current progress, goals..."></textarea></div>'+
+      '<div id="form-error" class="form-error"></div>'+
+      '<div class="form-actions"><button class="btn-cancel" onclick="closeForm()">Cancel</button><button class="btn-submit" id="f-submit" onclick="submitSkill()">Add Skill</button></div></div>';
+  }
+  document.getElementById('form-overlay').classList.add('open');
+  document.body.style.overflow='hidden';
+  setTimeout(()=>{const fi=fm.querySelector('.form-input');if(fi)fi.focus()},100);
+}
+function closeForm(){document.getElementById('form-overlay').classList.remove('open');document.body.style.overflow=''}
+function showFormError(msg){const el=document.getElementById('form-error');el.textContent=msg;el.style.display='block'}
+function setSubmitting(on){const b=document.getElementById('f-submit');b.disabled=on;if(on)b.textContent='Saving...'}
+
+async function submitTask(){
+  const name=document.getElementById('f-task-name').value.trim();
+  const project=document.getElementById('f-task-project').value;
+  if(!name){showFormError('Task name is required');return}
+  if(!project){showFormError('Please select a project');return}
+  const id='T'+(DATA.tasks.length+1).toString().padStart(3,'0');
+  const desc=document.getElementById('f-task-desc').value.trim();
+  const assignee=document.getElementById('f-task-assignee').value;
+  const status=document.getElementById('f-task-status').value;
+  const due=document.getElementById('f-task-due').value;
+  const today=new Date().toISOString().split('T')[0];
+  setSubmitting(true);
+  const ok=await appendToSheet('Tasks',[id,project,name,desc,assignee,status,due,today]);
+  setSubmitting(false);
+  if(ok){closeForm();showToast('Task added!','success');await refreshData()}
+}
+
+async function submitReference(){
+  const title=document.getElementById('f-ref-title').value.trim();
+  if(!title){showFormError('Title is required');return}
+  const id='R'+(DATA.references.length+1).toString().padStart(3,'0');
+  const cat=document.getElementById('f-ref-cat').value;
+  const notes=document.getElementById('f-ref-notes').value.trim();
+  const tags=document.getElementById('f-ref-tags').value.trim();
+  const img=document.getElementById('f-ref-img').value.trim();
+  const link=document.getElementById('f-ref-link').value.trim();
+  const linkTitle=document.getElementById('f-ref-linktitle').value.trim();
+  const addedBy=currentUser?currentUser.name:'Unknown';
+  const today=new Date().toISOString().split('T')[0];
+  setSubmitting(true);
+  const ok=await appendToSheet('References',[id,title,cat,notes,tags,img,link,linkTitle,addedBy,today]);
+  setSubmitting(false);
+  if(ok){closeForm();showToast('Reference added!','success');await refreshData()}
+}
+
+async function submitSkill(){
+  const name=document.getElementById('f-skill-name').value.trim();
+  if(!name){showFormError('Skill name is required');return}
+  const id='S'+(DATA.skills.length+1).toString().padStart(3,'0');
+  const type=document.getElementById('f-skill-type').value;
+  const level=document.getElementById('f-skill-level').value;
+  const notes=document.getElementById('f-skill-notes').value.trim();
+  setSubmitting(true);
+  const ok=await appendToSheet('Skills',[id,name,type,level,notes]);
+  setSubmitting(false);
+  if(ok){closeForm();showToast('Skill added!','success');await refreshData()}
+}
+
+document.addEventListener('keydown',e=>{if(e.key==='Escape'){if(document.getElementById('form-overlay').classList.contains('open'))closeForm();else closeModal()}});
+
 // DASHBOARD
 function renderDashboard(){
   const h=new Date().getHours();
@@ -375,25 +594,25 @@ function renderDashboard(){
   const done=DATA.tasks.filter(t=>t.status==='Done').length;
   const total=DATA.tasks.length;
   document.getElementById('stat-projects').textContent=active;
-  document.getElementById('stat-projects-info').textContent=`${total} total tasks`;
+  document.getElementById('stat-projects-info').textContent=total+' total tasks';
   document.getElementById('stat-progress').textContent=inP;
-  document.getElementById('stat-progress-info').textContent=`${DATA.tasks.filter(t=>t.status==='To Do').length} waiting`;
+  document.getElementById('stat-progress-info').textContent=DATA.tasks.filter(t=>t.status==='To Do').length+' waiting';
   document.getElementById('stat-done').textContent=done;
-  document.getElementById('stat-done-info').textContent=total?`${Math.round(done/total*100)}% completion`:'0%';
+  document.getElementById('stat-done-info').textContent=total?Math.round(done/total*100)+'% completion':'0%';
   document.getElementById('stat-refs').textContent=DATA.references.length;
-  document.getElementById('stat-refs-info').textContent=DATA.references.length?`${DATA.references.length} collected`:'None yet';
+  document.getElementById('stat-refs-info').textContent=DATA.references.length?DATA.references.length+' collected':'None yet';
 
   const grid=document.getElementById('projects-grid');
   if(!DATA.projects.length){grid.innerHTML='<div class="empty-state" style="grid-column:1/-1"><h3>No projects yet</h3><p>Add projects in the Google Sheet → Projects tab</p></div>';return}
   grid.innerHTML=DATA.projects.map(p=>{
     const color=gc(p.color||p.category),icon=gi(p.icon),pt=DATA.tasks.filter(t=>t.project_id===p.id),dt=pt.filter(t=>t.status==='Done').length;
     const prog=p.progress||(pt.length?Math.round(dt/pt.length*100):0),rem=pt.length-dt;
-    return`<div class="project-card" onclick="showProject('${p.id}')"><div class="project-card-header"><div class="project-icon ${color}"><span class="ic ic-lg"><svg><use href="${icon}"/></svg></span></div><div><span class="project-tag ${color}">${p.category||'Project'}</span><h3>${p.name}</h3></div></div><p class="project-desc">${p.description||''}</p><div class="project-footer"><div class="project-progress"><div class="progress-bar"><div class="fill" style="width:${prog}%;background:var(--tag-${color})"></div></div><span class="progress-label">${prog}%${rem>0?` · ${rem} tasks left`:''}</span></div></div></div>`
+    return'<div class="project-card" onclick="showProject(\''+p.id+'\')"><div class="project-card-header"><div class="project-icon '+color+'"><span class="ic ic-lg"><svg><use href="'+icon+'"/></svg></span></div><div><span class="project-tag '+color+'">'+(p.category||'Project')+'</span><h3>'+p.name+'</h3></div></div><p class="project-desc">'+(p.description||'')+'</p><div class="project-footer"><div class="project-progress"><div class="progress-bar"><div class="fill" style="width:'+prog+'%;background:var(--tag-'+color+')"></div></div><span class="progress-label">'+prog+'%'+(rem>0?' · '+rem+' tasks left':'')+'</span></div></div></div>'
   }).join('');
 
   document.getElementById('sidebar-projects').innerHTML=DATA.projects.map(p=>{
     const tc=DATA.tasks.filter(t=>t.project_id===p.id&&t.status!=='Done').length;
-    return`<div class="sidebar-item" data-nav="project-${p.id}" onclick="showProject('${p.id}')"><span class="ic"><svg><use href="${gi(p.icon)}"/></svg></span> ${p.name}${tc?`<span class="badge">${tc}</span>`:''}</div>`
+    return'<div class="sidebar-item" data-nav="project-'+p.id+'" onclick="showProject(\''+p.id+'\')"><span class="ic"><svg><use href="'+gi(p.icon)+'"/></svg></span> '+p.name+(tc?'<span class="badge">'+tc+'</span>':'')+'</div>'
   }).join('');
 
   renderTaskList(DATA.tasks.slice(0,8),'tasks-list',true);
@@ -402,30 +621,31 @@ function renderDashboard(){
 // TASK LIST
 function renderTaskList(tasks,id,showProj){
   const el=document.getElementById(id);
-  if(!tasks.length){el.innerHTML='<div class="empty-state"><h3>No tasks found</h3><p>Try changing filters or add tasks in the Sheet</p></div>';return}
+  if(!tasks.length){el.innerHTML='<div class="empty-state"><h3>No tasks found</h3><p>Try changing filters or add a new task</p></div>';return}
   const order={'In Progress':0,'To Do':1,'Review':2,'Done':3};
   const s=[...tasks].sort((a,b)=>(order[a.status]||1)-(order[b.status]||1));
-  el.innerHTML=`<div class="task-list">${s.map(t=>{
+  el.innerHTML='<div class="task-list">'+s.map(t=>{
     const done=t.status==='Done',sc=t.status==='In Progress'?'in-progress':done?'done':t.status==='Review'?'review':'todo';
     const proj=DATA.projects.find(p=>p.id===t.project_id),ac=t.assigned_to==='Omer'?'var(--accent)':'var(--info)';
     const over=!done&&isOverdue(t.due_date),meta=showProj?(proj?proj.name:''):(t.description||'');
-    return`<div class="task-row"><div class="task-check${done?' done':''}">${done?'<svg style="width:11px;height:11px;stroke:#fff;stroke-width:3;fill:none"><use href="#i-check"/></svg>':''}</div><div class="task-info"><div class="task-name${done?' completed':''}">${t.name}</div><div class="task-meta">${meta}</div></div><div class="task-assignee" style="background:${ac}" title="${t.assigned_to||''}">${t.assigned_to?t.assigned_to[0]:'?'}</div><div class="task-status ${sc}">${t.status||'To Do'}</div><div class="task-due${over?' overdue':''}">${t.due_date||''}</div></div>`
-  }).join('')}</div>`;
+    const checkClick=accessToken?'onclick="event.stopPropagation();toggleTaskStatus(\''+t.id+'\')" title="Click to toggle"':'title="Sign in to update"';
+    return'<div class="task-row"><div class="task-check'+(done?' done':'')+'" '+checkClick+'>'+(done?'<svg style="width:11px;height:11px;stroke:#fff;stroke-width:3;fill:none"><use href="#i-check"/></svg>':'')+'</div><div class="task-info"><div class="task-name'+(done?' completed':'')+'">'+t.name+'</div><div class="task-meta">'+meta+'</div></div><div class="task-assignee" style="background:'+ac+'" title="'+(t.assigned_to||'')+'">'+(t.assigned_to?t.assigned_to[0]:'?')+'</div><div class="task-status '+sc+'">'+(t.status||'To Do')+'</div><div class="task-due'+(over?' overdue':'')+'">'+(t.due_date||'')+'</div></div>'
+  }).join('')+'</div>';
 }
 
 // ALL TASKS
 function renderAllTasks(){
   const total=DATA.tasks.length,done=DATA.tasks.filter(t=>t.status==='Done').length;
-  document.getElementById('all-tasks-subtitle').textContent=`${total} tasks · ${done} completed · ${total-done} remaining`;
-  document.getElementById('task-filters').innerHTML=`
-    <div class="filter-chip ${FILTERS.status==='all'?'active':''}" onclick="setFilter('status','all')">All</div>
-    <div class="filter-chip ${FILTERS.status==='In Progress'?'active':''}" onclick="setFilter('status','In Progress')">In Progress</div>
-    <div class="filter-chip ${FILTERS.status==='To Do'?'active':''}" onclick="setFilter('status','To Do')">To Do</div>
-    <div class="filter-chip ${FILTERS.status==='Done'?'active':''}" onclick="setFilter('status','Done')">Done</div>
-    <div class="filter-divider"></div>
-    <div class="filter-chip ${FILTERS.assignee==='all'?'active':''}" onclick="setFilter('assignee','all')">Everyone</div>
-    <div class="filter-chip ${FILTERS.assignee==='Omer'?'active':''}" onclick="setFilter('assignee','Omer')">Omer</div>
-    <div class="filter-chip ${FILTERS.assignee==='Lotan'?'active':''}" onclick="setFilter('assignee','Lotan')">Lotan</div>`;
+  document.getElementById('all-tasks-subtitle').textContent=total+' tasks · '+done+' completed · '+(total-done)+' remaining';
+  document.getElementById('task-filters').innerHTML=
+    '<div class="filter-chip '+(FILTERS.status==='all'?'active':'')+'" onclick="setFilter(\'status\',\'all\')">All</div>'+
+    '<div class="filter-chip '+(FILTERS.status==='In Progress'?'active':'')+'" onclick="setFilter(\'status\',\'In Progress\')">In Progress</div>'+
+    '<div class="filter-chip '+(FILTERS.status==='To Do'?'active':'')+'" onclick="setFilter(\'status\',\'To Do\')">To Do</div>'+
+    '<div class="filter-chip '+(FILTERS.status==='Done'?'active':'')+'" onclick="setFilter(\'status\',\'Done\')">Done</div>'+
+    '<div class="filter-divider"></div>'+
+    '<div class="filter-chip '+(FILTERS.assignee==='all'?'active':'')+'" onclick="setFilter(\'assignee\',\'all\')">Everyone</div>'+
+    '<div class="filter-chip '+(FILTERS.assignee==='Omer'?'active':'')+'" onclick="setFilter(\'assignee\',\'Omer\')">Omer</div>'+
+    '<div class="filter-chip '+(FILTERS.assignee==='Lotan'?'active':'')+'" onclick="setFilter(\'assignee\',\'Lotan\')">Lotan</div>';
   let f=DATA.tasks;
   if(FILTERS.status!=='all')f=f.filter(t=>t.status===FILTERS.status);
   if(FILTERS.assignee!=='all')f=f.filter(t=>t.assigned_to===FILTERS.assignee);
@@ -442,37 +662,25 @@ function setFilter(k,v){
 function renderReferences(){
   const refs=DATA.references;
   const cats=['all',...new Set(refs.map(r=>r.category).filter(Boolean))];
-  document.getElementById('ref-subtitle').textContent=`${refs.length} items collected by the team`;
+  document.getElementById('ref-subtitle').textContent=refs.length+' items collected by the team';
   document.getElementById('ref-filters').innerHTML=cats.map(c=>
-    `<div class="filter-chip ${REF_FILTER===c?'active':''}" onclick="setRefFilter('${c}')">${c==='all'?'All':c}</div>`
+    '<div class="filter-chip '+(REF_FILTER===c?'active':'')+'" onclick="setRefFilter(\''+c+'\')">'+(c==='all'?'All':c)+'</div>'
   ).join('');
-
   let filtered=refs;
   if(REF_FILTER!=='all')filtered=refs.filter(r=>r.category===REF_FILTER);
-
   const grid=document.getElementById('ref-grid');
-  if(!filtered.length){grid.innerHTML='<div class="empty-state" style="grid-column:1/-1"><h3>No references yet</h3><p>Add references in the Google Sheet → References tab</p></div>';return}
-  
+  if(!filtered.length){grid.innerHTML='<div class="empty-state" style="grid-column:1/-1"><h3>No references yet</h3><p>Add references using the + button above</p></div>';return}
   grid.innerHTML=filtered.map(r=>{
     const img=r.image_urls?r.image_urls.split(',')[0].trim():'';
     const catColor=CAT_COLORS[r.category]||'var(--accent)';
     const catBg=CAT_BGS[r.category]||'var(--accent-soft)';
     const tags=(r.tags||'').split(',').filter(Boolean).slice(0,3);
-    return`<div class="ref-card" onclick="openRefModal('${r.id}')">
-      ${img?`<img class="ref-card-img" src="${img}" alt="${r.title}" onerror="this.outerHTML='<div class=ref-card-img-placeholder><span class=ic><svg><use href=#i-image/></svg></span></div>'">`:`<div class="ref-card-img-placeholder"><span class="ic"><svg><use href="#i-image"/></svg></span></div>`}
-      <div class="ref-card-body">
-        <h3>${r.title}</h3>
-        <p>${r.notes||''}</p>
-        <div class="ref-card-footer">
-          <span class="ref-card-cat" style="background:${catBg};color:${catColor}">${r.category||'Uncategorized'}</span>
-          <span class="ref-card-meta">${r.added_by||''}</span>
-        </div>
-        ${tags.length?`<div class="ref-tags">${tags.map(t=>`<span class="ref-tag">${t.trim()}</span>`).join('')}</div>`:''}
-      </div>
-    </div>`;
+    return'<div class="ref-card" onclick="openRefModal(\''+r.id+'\')">'+
+      (img?'<img class="ref-card-img" src="'+img+'" alt="'+r.title+'" onerror="this.outerHTML=\'<div class=ref-card-img-placeholder><span class=ic><svg><use href=#i-image/></svg></span></div>\'">':'<div class="ref-card-img-placeholder"><span class="ic"><svg><use href="#i-image"/></svg></span></div>')+
+      '<div class="ref-card-body"><h3>'+r.title+'</h3><p>'+(r.notes||'')+'</p><div class="ref-card-footer"><span class="ref-card-cat" style="background:'+catBg+';color:'+catColor+'">'+(r.category||'Uncategorized')+'</span><span class="ref-card-meta">'+(r.added_by||'')+'</span></div>'+
+      (tags.length?'<div class="ref-tags">'+tags.map(t=>'<span class="ref-tag">'+t.trim()+'</span>').join('')+'</div>':'')+'</div></div>'
   }).join('');
 }
-
 function setRefFilter(c){REF_FILTER=c;renderReferences()}
 
 function openRefModal(id){
@@ -483,31 +691,17 @@ function openRefModal(id){
   const linkTitles=(r.link_titles||'').split(',');
   const catColor=CAT_COLORS[r.category]||'var(--accent)';
   const catBg=CAT_BGS[r.category]||'var(--accent-soft)';
-
-  document.getElementById('modal').innerHTML=`
-    <button class="modal-close" onclick="closeModal()">×</button>
-    ${img?`<img class="modal-img" src="${img}" alt="${r.title}" onerror="this.outerHTML='<div class=modal-img-placeholder><span class=ic style=color:var(--text-muted)><svg style=width:32px;height:32px><use href=#i-image/></svg></span></div>'">`
-    :`<div class="modal-img-placeholder"><span class="ic" style="color:var(--text-muted)"><svg style="width:32px;height:32px"><use href="#i-image"/></svg></span></div>`}
-    <div class="modal-body">
-      <span class="modal-cat" style="background:${catBg};color:${catColor}">${r.category||'Uncategorized'}</span>
-      <h2>${r.title}</h2>
-      <p class="modal-notes">${r.notes||'No notes added yet.'}</p>
-      ${tags.length?`<div class="modal-section"><div class="modal-section-label">Tags</div><div class="modal-tags">${tags.map(t=>`<span class="modal-tag">${t.trim()}</span>`).join('')}</div></div>`:''}
-      ${links.length?`<div class="modal-section"><div class="modal-section-label">Links</div><div>${links.map((l,i)=>`<a class="modal-link" href="${l.trim()}" target="_blank"><span class="ic ic-sm"><svg><use href="#i-external"/></svg></span>${linkTitles[i]?linkTitles[i].trim():'Visit'}</a>`).join('')}</div></div>`:''}
-      <div class="modal-meta">
-        <span>Added by ${r.added_by||'Unknown'}</span>
-        <span>${r.created_date||''}</span>
-      </div>
-    </div>`;
+  document.getElementById('modal').innerHTML=
+    '<button class="modal-close" onclick="closeModal()">×</button>'+
+    (img?'<img class="modal-img" src="'+img+'" alt="'+r.title+'" onerror="this.outerHTML=\'<div class=modal-img-placeholder><span class=ic style=color:var(--text-muted)><svg style=width:32px;height:32px><use href=#i-image/></svg></span></div>\'">':'<div class="modal-img-placeholder"><span class="ic" style="color:var(--text-muted)"><svg style="width:32px;height:32px"><use href="#i-image"/></svg></span></div>')+
+    '<div class="modal-body"><span class="modal-cat" style="background:'+catBg+';color:'+catColor+'">'+(r.category||'Uncategorized')+'</span><h2>'+r.title+'</h2><p class="modal-notes">'+(r.notes||'No notes added yet.')+'</p>'+
+    (tags.length?'<div class="modal-section"><div class="modal-section-label">Tags</div><div class="modal-tags">'+tags.map(t=>'<span class="modal-tag">'+t.trim()+'</span>').join('')+'</div></div>':'')+
+    (links.length?'<div class="modal-section"><div class="modal-section-label">Links</div><div>'+links.map((l,i)=>'<a class="modal-link" href="'+l.trim()+'" target="_blank"><span class="ic ic-sm"><svg><use href="#i-external"/></svg></span>'+(linkTitles[i]?linkTitles[i].trim():'Visit')+'</a>').join('')+'</div></div>':'')+
+    '<div class="modal-meta"><span>Added by '+(r.added_by||'Unknown')+'</span><span>'+(r.created_date||'')+'</span></div></div>';
   document.getElementById('modal-overlay').classList.add('open');
   document.body.style.overflow='hidden';
 }
-
-function closeModal(){
-  document.getElementById('modal-overlay').classList.remove('open');
-  document.body.style.overflow='';
-}
-document.addEventListener('keydown',e=>{if(e.key==='Escape')closeModal()});
+function closeModal(){document.getElementById('modal-overlay').classList.remove('open');if(!document.getElementById('form-overlay').classList.contains('open'))document.body.style.overflow=''}
 
 // SKILLS MATRIX
 const LEVEL_LABELS={1:'Beginner',2:'Learning',3:'Intermediate',4:'Advanced',5:'Expert'};
@@ -522,95 +716,67 @@ function renderSkills(){
   const avgLevel=skills.length?Math.round(skills.reduce((a,s)=>a+parseInt(s.level||0),0)/skills.length*10)/10:0;
   const advanced=skills.filter(s=>parseInt(s.level)>=4).length;
   const learning=skills.filter(s=>parseInt(s.level)<=2).length;
-
-  document.getElementById('skills-subtitle').textContent=`${skills.length} skills tracked · Average level: ${avgLevel}/5`;
-  document.getElementById('skills-overview').innerHTML=`
-    <div class="skill-overview-card"><div class="skill-overview-val">${skills.length}</div><div class="skill-overview-label">Total Skills</div></div>
-    <div class="skill-overview-card"><div class="skill-overview-val">${avgLevel}</div><div class="skill-overview-label">Avg Level</div></div>
-    <div class="skill-overview-card"><div class="skill-overview-val">${advanced}</div><div class="skill-overview-label">Advanced+</div></div>
-    <div class="skill-overview-card"><div class="skill-overview-val">${learning}</div><div class="skill-overview-label">To Develop</div></div>`;
-
+  document.getElementById('skills-subtitle').textContent=skills.length+' skills tracked · Average level: '+avgLevel+'/5';
+  document.getElementById('skills-overview').innerHTML=
+    '<div class="skill-overview-card"><div class="skill-overview-val">'+skills.length+'</div><div class="skill-overview-label">Total Skills</div></div>'+
+    '<div class="skill-overview-card"><div class="skill-overview-val">'+avgLevel+'</div><div class="skill-overview-label">Avg Level</div></div>'+
+    '<div class="skill-overview-card"><div class="skill-overview-val">'+advanced+'</div><div class="skill-overview-label">Advanced+</div></div>'+
+    '<div class="skill-overview-card"><div class="skill-overview-val">'+learning+'</div><div class="skill-overview-label">To Develop</div></div>';
   document.getElementById('skills-filters').innerHTML=types.map(t=>
-    `<div class="filter-chip ${SKILL_FILTER===t?'active':''}" onclick="setSkillFilter('${t}')">${t==='all'?'All':t}</div>`
+    '<div class="filter-chip '+(SKILL_FILTER===t?'active':'')+'" onclick="setSkillFilter(\''+t+'\')">'+(t==='all'?'All':t)+'</div>'
   ).join('');
-
   let filtered=skills;
   if(SKILL_FILTER!=='all')filtered=skills.filter(s=>s.type===SKILL_FILTER);
-
-  // Group by type
   const grouped={};
   filtered.forEach(s=>{const t=s.type||'Other';if(!grouped[t])grouped[t]=[];grouped[t].push(s)});
-
   const list=document.getElementById('skills-list');
-  if(!filtered.length){list.innerHTML='<div class="empty-state"><h3>No skills found</h3><p>Add skills in the Google Sheet → Skills tab</p></div>';return}
-
+  if(!filtered.length){list.innerHTML='<div class="empty-state"><h3>No skills found</h3><p>Add skills using the + button above</p></div>';return}
   list.innerHTML=Object.entries(grouped).map(([type,items])=>{
     const sorted=[...items].sort((a,b)=>parseInt(b.level||0)-parseInt(a.level||0));
     const iconRef=TYPE_ICONS[type]||'#i-zap';
     const cls=TYPE_CLASSES[type]||'creative';
-    return`<div class="skill-group">
-      <div class="skill-group-header">
-        <div class="skill-group-icon ${cls}"><span class="ic"><svg><use href="${iconRef}"/></svg></span></div>
-        <h3>${type}</h3>
-        <span class="skill-group-count">${items.length} skills</span>
-      </div>
-      ${sorted.map(s=>{
-        const lv=parseInt(s.level)||0;
-        const pct=lv*20;
-        const color=LEVEL_COLORS[lv]||'var(--text-muted)';
-        const label=LEVEL_LABELS[lv]||'Unknown';
-        return`<div class="skill-card" onclick="this.classList.toggle('expanded')">
-          <div class="skill-card-top">
-            <div class="skill-name">${s.name}</div>
-            <div class="skill-level">${[1,2,3,4,5].map(i=>`<div class="skill-dot${i<=lv?' filled-'+lv:''}"></div>`).join('')}</div>
-            <div class="skill-level-label">${label}</div>
-            <div class="skill-bar-wrap"><div class="skill-bar"><div class="fill" style="width:${pct}%;background:${color}"></div></div></div>
-            <span class="skill-chevron ic ic-sm"><svg><use href="#i-chevron-down"/></svg></span>
-          </div>
-          ${s.notes?`<div class="skill-notes">${s.notes}</div>`:''}
-        </div>`;
-      }).join('')}
-    </div>`;
+    return'<div class="skill-group"><div class="skill-group-header"><div class="skill-group-icon '+cls+'"><span class="ic"><svg><use href="'+iconRef+'"/></svg></span></div><h3>'+type+'</h3><span class="skill-group-count">'+items.length+' skills</span></div>'+
+      sorted.map(s=>{
+        const lv=parseInt(s.level)||0;const pct=lv*20;
+        const color=LEVEL_COLORS[lv]||'var(--text-muted)';const label=LEVEL_LABELS[lv]||'Unknown';
+        return'<div class="skill-card" onclick="this.classList.toggle(\'expanded\')"><div class="skill-card-top"><div class="skill-name">'+s.name+'</div><div class="skill-level">'+[1,2,3,4,5].map(i=>'<div class="skill-dot'+(i<=lv?' filled-'+lv:'')+'"></div>').join('')+'</div><div class="skill-level-label">'+label+'</div><div class="skill-bar-wrap"><div class="skill-bar"><div class="fill" style="width:'+pct+'%;background:'+color+'"></div></div></div><span class="skill-chevron ic ic-sm"><svg><use href="#i-chevron-down"/></svg></span></div>'+(s.notes?'<div class="skill-notes">'+s.notes+'</div>':'')+'</div>'
+      }).join('')+'</div>'
   }).join('');
 }
-
 function setSkillFilter(t){SKILL_FILTER=t;renderSkills()}
 
 // PROJECT DETAIL
 function showProject(pid){
-  currentProjectId=pid;
-  FILTERS={status:'all',assignee:'all'};
+  currentProjectId=pid;FILTERS={status:'all',assignee:'all'};
   const p=DATA.projects.find(x=>x.id===pid);if(!p)return;
   const color=gc(p.color||p.category),icon=gi(p.icon);
-  document.getElementById('project-header').innerHTML=`<div class="project-icon ${color}"><span class="ic ic-lg"><svg><use href="${icon}"/></svg></span></div><div class="project-detail-info"><h1>${p.name}</h1><p>${p.description||''}</p></div>`;
+  document.getElementById('project-header').innerHTML='<div class="project-icon '+color+'"><span class="ic ic-lg"><svg><use href="'+icon+'"/></svg></span></div><div class="project-detail-info"><h1>'+p.name+'</h1><p>'+(p.description||'')+'</p></div>';
   const pt=DATA.tasks.filter(t=>t.project_id===pid),done=pt.filter(t=>t.status==='Done').length,inP=pt.filter(t=>t.status==='In Progress').length,todo=pt.filter(t=>t.status==='To Do').length,prog=pt.length?Math.round(done/pt.length*100):0;
-  document.getElementById('project-stats').innerHTML=`
-    <div class="mini-stat"><div class="mini-val">${pt.length}</div><div class="mini-label">Total</div></div>
-    <div class="mini-stat"><div class="mini-val">${inP}</div><div class="mini-label">In Progress</div></div>
-    <div class="mini-stat"><div class="mini-val">${todo}</div><div class="mini-label">To Do</div></div>
-    <div class="mini-stat"><div class="mini-val">${prog}%</div><div class="mini-label">Complete</div></div>`;
-  document.getElementById('project-filters').innerHTML=`
-    <div class="filter-chip ${FILTERS.status==='all'?'active':''}" onclick="setFilter('status','all')">All (${pt.length})</div>
-    <div class="filter-chip ${FILTERS.status==='In Progress'?'active':''}" onclick="setFilter('status','In Progress')">In Progress (${inP})</div>
-    <div class="filter-chip ${FILTERS.status==='To Do'?'active':''}" onclick="setFilter('status','To Do')">To Do (${todo})</div>
-    <div class="filter-chip ${FILTERS.status==='Done'?'active':''}" onclick="setFilter('status','Done')">Done (${done})</div>
-    <div class="filter-divider"></div>
-    <div class="filter-chip ${FILTERS.assignee==='all'?'active':''}" onclick="setFilter('assignee','all')">Everyone</div>
-    <div class="filter-chip ${FILTERS.assignee==='Omer'?'active':''}" onclick="setFilter('assignee','Omer')">Omer</div>
-    <div class="filter-chip ${FILTERS.assignee==='Lotan'?'active':''}" onclick="setFilter('assignee','Lotan')">Lotan</div>`;
+  document.getElementById('project-stats').innerHTML=
+    '<div class="mini-stat"><div class="mini-val">'+pt.length+'</div><div class="mini-label">Total</div></div>'+
+    '<div class="mini-stat"><div class="mini-val">'+inP+'</div><div class="mini-label">In Progress</div></div>'+
+    '<div class="mini-stat"><div class="mini-val">'+todo+'</div><div class="mini-label">To Do</div></div>'+
+    '<div class="mini-stat"><div class="mini-val">'+prog+'%</div><div class="mini-label">Complete</div></div>';
+  document.getElementById('project-filters').innerHTML=
+    '<div class="filter-chip '+(FILTERS.status==='all'?'active':'')+'" onclick="setFilter(\'status\',\'all\')">All ('+pt.length+')</div>'+
+    '<div class="filter-chip '+(FILTERS.status==='In Progress'?'active':'')+'" onclick="setFilter(\'status\',\'In Progress\')">In Progress ('+inP+')</div>'+
+    '<div class="filter-chip '+(FILTERS.status==='To Do'?'active':'')+'" onclick="setFilter(\'status\',\'To Do\')">To Do ('+todo+')</div>'+
+    '<div class="filter-chip '+(FILTERS.status==='Done'?'active':'')+'" onclick="setFilter(\'status\',\'Done\')">Done ('+done+')</div>'+
+    '<div class="filter-divider"></div>'+
+    '<div class="filter-chip '+(FILTERS.assignee==='all'?'active':'')+'" onclick="setFilter(\'assignee\',\'all\')">Everyone</div>'+
+    '<div class="filter-chip '+(FILTERS.assignee==='Omer'?'active':'')+'" onclick="setFilter(\'assignee\',\'Omer\')">Omer</div>'+
+    '<div class="filter-chip '+(FILTERS.assignee==='Lotan'?'active':'')+'" onclick="setFilter(\'assignee\',\'Lotan\')">Lotan</div>';
   renderTaskList(pt,'project-tasks',false);
   nav('project',p.name);
 }
 
 // NAVIGATION
 function nav(id,label){
-  FILTERS={status:'all',assignee:'all'};
-  REF_FILTER='all';
-  SKILL_FILTER='all';
+  FILTERS={status:'all',assignee:'all'};REF_FILTER='all';SKILL_FILTER='all';
   document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
   const scr=document.getElementById('s-'+id);if(scr)scr.classList.add('active');
   document.querySelectorAll('.sidebar-item').forEach(i=>i.classList.remove('active'));
-  const ni=document.querySelector(`.sidebar-item[data-nav="${id==='project'?'project-'+currentProjectId:id}"]`);
+  const ni=document.querySelector('.sidebar-item[data-nav="'+(id==='project'?'project-'+currentProjectId:id)+'"]');
   if(ni)ni.classList.add('active');
   else if(id==='dashboard')document.querySelector('.sidebar-item[data-nav="dashboard"]')?.classList.add('active');
   document.getElementById('bc').textContent=id==='dashboard'?'Dashboard':id==='all-tasks'?'All Tasks':id==='references'?'Reference Board':id==='skills'?'Skills Matrix':(label||'');
