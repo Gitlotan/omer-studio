@@ -231,6 +231,29 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text-prim
 .toast.success{background:var(--success)}
 .toast.error{background:var(--danger)}
 .toast .ic svg{stroke:#fff;width:16px;height:16px}
+/* Delete */
+.task-delete{width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--text-muted);transition:all .15s;flex-shrink:0;opacity:0}
+.task-row:hover .task-delete{opacity:1}
+.task-delete:hover{background:var(--danger-soft);color:var(--danger)}
+.task-delete svg{width:14px;height:14px}
+.ref-delete{position:absolute;top:8px;right:8px;width:28px;height:28px;border-radius:50%;background:rgba(0,0,0,.5);color:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer;opacity:0;transition:all .15s;z-index:2}
+.ref-card:hover .ref-delete{opacity:1}
+.ref-delete:hover{background:var(--danger)}
+.ref-delete svg{width:14px;height:14px;stroke:#fff}
+.ref-card{position:relative}
+.skill-delete{width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--text-muted);transition:all .15s;flex-shrink:0;opacity:0}
+.skill-card:hover .skill-delete{opacity:1}
+.skill-delete:hover{background:var(--danger-soft);color:var(--danger)}
+.skill-delete svg{width:14px;height:14px}
+/* Confirm dialog */
+.confirm-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.4);z-index:3000;display:none;align-items:center;justify-content:center;backdrop-filter:blur(2px)}
+.confirm-overlay.open{display:flex}
+.confirm-box{background:var(--card-bg);border-radius:var(--radius);padding:24px 28px;max-width:380px;width:100%;box-shadow:var(--shadow-lg);animation:modalIn .2s ease}
+.confirm-box h3{font-size:16px;font-weight:600;margin-bottom:8px}
+.confirm-box p{font-size:13px;color:var(--text-secondary);margin-bottom:20px;line-height:1.5}
+.confirm-actions{display:flex;justify-content:flex-end;gap:10px}
+.btn-delete{padding:8px 18px;border-radius:var(--radius-sm);font-size:13px;font-weight:500;cursor:pointer;border:none;background:var(--danger);color:#fff;font-family:'DM Sans',sans-serif;transition:all .15s}
+.btn-delete:hover{background:#A94A4A}
 @keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
 .content .screen.active{animation:fadeIn .3s ease}
 ::-webkit-scrollbar{width:6px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:var(--card-border);border-radius:3px}
@@ -267,6 +290,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text-prim
   <symbol id="i-external" viewBox="0 0 24 24"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></symbol>
   <symbol id="i-log-in" viewBox="0 0 24 24"><path d="M15 3h4a2 2 0 012 2v14a2 2 0 01-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></symbol>
   <symbol id="i-log-out" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></symbol>
+  <symbol id="i-trash" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></symbol>
 </svg>
 
 <nav class="sidebar">
@@ -361,6 +385,9 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text-prim
 </div>
 <div class="modal-overlay" id="form-overlay" onclick="if(event.target===this)closeForm()">
   <div class="modal form-modal" style="position:relative" id="form-modal"></div>
+</div>
+<div class="confirm-overlay" id="confirm-overlay">
+  <div class="confirm-box" id="confirm-box"></div>
 </div>
 <div class="toast" id="toast"></div>
 
@@ -491,6 +518,46 @@ async function toggleTaskStatus(taskId){
     else if(active.id==='s-all-tasks')renderAllTasks();
     else if(active.id==='s-project'&&currentProjectId)showProject(currentProjectId);
   }
+}
+
+// DELETE ROW
+async function deleteSheetRow(sheetGid,rowIndex){
+  if(!accessToken){showToast('Please sign in first','error');return false}
+  const url='https://sheets.googleapis.com/v4/spreadsheets/'+SHEET_ID+':batchUpdate';
+  try{
+    const resp=await fetch(url,{method:'POST',headers:{'Authorization':'Bearer '+accessToken,'Content-Type':'application/json'},
+      body:JSON.stringify({requests:[{deleteDimension:{range:{sheetId:sheetGid,dimension:'ROWS',startIndex:rowIndex-1,endIndex:rowIndex}}}]})});
+    if(!resp.ok){if(resp.status===401){accessToken=null;updateAuthUI();showToast('Session expired — sign in again','error');return false}throw new Error('Delete failed')}
+    return true;
+  }catch(e){showToast('Error: '+e.message,'error');return false}
+}
+
+let pendingDelete=null;
+function confirmDelete(type,id,name){
+  if(!accessToken){showToast('Sign in to delete','error');return}
+  pendingDelete={type,id};
+  document.getElementById('confirm-box').innerHTML='<h3>Delete '+type+'?</h3><p>Are you sure you want to delete <strong>'+name+'</strong>? This cannot be undone.</p><div class="confirm-actions"><button class="btn-cancel" onclick="closeConfirm()">Cancel</button><button class="btn-delete" id="confirm-del-btn" onclick="executeDelete()">Delete</button></div>';
+  document.getElementById('confirm-overlay').classList.add('open');
+}
+function closeConfirm(){document.getElementById('confirm-overlay').classList.remove('open');pendingDelete=null}
+
+async function executeDelete(){
+  if(!pendingDelete)return;
+  const btn=document.getElementById('confirm-del-btn');btn.disabled=true;btn.textContent='Deleting...';
+  const{type,id}=pendingDelete;
+  let ok=false;
+  if(type==='task'){
+    const idx=DATA.tasks.findIndex(t=>t.id===id);
+    if(idx>=0)ok=await deleteSheetRow(SHEET_GIDS.Tasks,idx+2);
+  }else if(type==='reference'){
+    const idx=DATA.references.findIndex(r=>r.id===id);
+    if(idx>=0)ok=await deleteSheetRow(SHEET_GIDS.References,idx+2);
+  }else if(type==='skill'){
+    const idx=DATA.skills.findIndex(s=>s.id===id);
+    if(idx>=0)ok=await deleteSheetRow(SHEET_GIDS.Skills,idx+2);
+  }
+  closeConfirm();
+  if(ok){showToast(type.charAt(0).toUpperCase()+type.slice(1)+' deleted','success');await refreshData()}
 }
 
 // ADD FORMS
@@ -630,7 +697,8 @@ function renderTaskList(tasks,id,showProj){
     const proj=DATA.projects.find(p=>p.id===t.project_id),ac=t.assigned_to==='Omer'?'var(--accent)':'var(--info)';
     const over=!done&&isOverdue(t.due_date),meta=showProj?(proj?proj.name:''):(t.description||'');
     const checkClick=accessToken?'onclick="event.stopPropagation();toggleTaskStatus(\''+t.id+'\')" title="Click to toggle"':'title="Sign in to update"';
-    return'<div class="task-row"><div class="task-check'+(done?' done':'')+'" '+checkClick+'>'+(done?'<svg style="width:11px;height:11px;stroke:#fff;stroke-width:3;fill:none"><use href="#i-check"/></svg>':'')+'</div><div class="task-info"><div class="task-name'+(done?' completed':'')+'">'+t.name+'</div><div class="task-meta">'+meta+'</div></div><div class="task-assignee" style="background:'+ac+'" title="'+(t.assigned_to||'')+'">'+(t.assigned_to?t.assigned_to[0]:'?')+'</div><div class="task-status '+sc+'">'+(t.status||'To Do')+'</div><div class="task-due'+(over?' overdue':'')+'">'+(t.due_date||'')+'</div></div>'
+    const delBtn=accessToken?'<div class="task-delete" onclick="event.stopPropagation();confirmDelete(\'task\',\''+t.id+'\',\''+t.name.replace(/'/g,'\\\'')+'\')" title="Delete task"><svg><use href="#i-trash"/></svg></div>':'';
+    return'<div class="task-row"><div class="task-check'+(done?' done':'')+'" '+checkClick+'>'+(done?'<svg style="width:11px;height:11px;stroke:#fff;stroke-width:3;fill:none"><use href="#i-check"/></svg>':'')+'</div><div class="task-info"><div class="task-name'+(done?' completed':'')+'">'+t.name+'</div><div class="task-meta">'+meta+'</div></div><div class="task-assignee" style="background:'+ac+'" title="'+(t.assigned_to||'')+'">'+(t.assigned_to?t.assigned_to[0]:'?')+'</div><div class="task-status '+sc+'">'+(t.status||'To Do')+'</div><div class="task-due'+(over?' overdue':'')+'">'+(t.due_date||'')+'</div>'+delBtn+'</div>'
   }).join('')+'</div>';
 }
 
@@ -677,6 +745,7 @@ function renderReferences(){
     const catBg=CAT_BGS[r.category]||'var(--accent-soft)';
     const tags=(r.tags||'').split(',').filter(Boolean).slice(0,3);
     return'<div class="ref-card" onclick="openRefModal(\''+r.id+'\')">'+
+      (accessToken?'<div class="ref-delete" onclick="event.stopPropagation();confirmDelete(\'reference\',\''+r.id+'\',\''+r.title.replace(/'/g,'\\\'')+'\')" title="Delete reference"><svg><use href="#i-trash"/></svg></div>':'')+
       (img?'<img class="ref-card-img" src="'+img+'" alt="'+r.title+'" onerror="this.outerHTML=\'<div class=ref-card-img-placeholder><span class=ic><svg><use href=#i-image/></svg></span></div>\'">':'<div class="ref-card-img-placeholder"><span class="ic"><svg><use href="#i-image"/></svg></span></div>')+
       '<div class="ref-card-body"><h3>'+r.title+'</h3><p>'+(r.notes||'')+'</p><div class="ref-card-footer"><span class="ref-card-cat" style="background:'+catBg+';color:'+catColor+'">'+(r.category||'Uncategorized')+'</span><span class="ref-card-meta">'+(r.added_by||'')+'</span></div>'+
       (tags.length?'<div class="ref-tags">'+tags.map(t=>'<span class="ref-tag">'+t.trim()+'</span>').join('')+'</div>':'')+'</div></div>'
@@ -740,7 +809,7 @@ function renderSkills(){
       sorted.map(s=>{
         const lv=parseInt(s.level)||0;const pct=lv*20;
         const color=LEVEL_COLORS[lv]||'var(--text-muted)';const label=LEVEL_LABELS[lv]||'Unknown';
-        return'<div class="skill-card" onclick="this.classList.toggle(\'expanded\')"><div class="skill-card-top"><div class="skill-name">'+s.name+'</div><div class="skill-level">'+[1,2,3,4,5].map(i=>'<div class="skill-dot'+(i<=lv?' filled-'+lv:'')+'"></div>').join('')+'</div><div class="skill-level-label">'+label+'</div><div class="skill-bar-wrap"><div class="skill-bar"><div class="fill" style="width:'+pct+'%;background:'+color+'"></div></div></div><span class="skill-chevron ic ic-sm"><svg><use href="#i-chevron-down"/></svg></span></div>'+(s.notes?'<div class="skill-notes">'+s.notes+'</div>':'')+'</div>'
+        return'<div class="skill-card" onclick="this.classList.toggle(\'expanded\')"><div class="skill-card-top"><div class="skill-name">'+s.name+'</div><div class="skill-level">'+[1,2,3,4,5].map(i=>'<div class="skill-dot'+(i<=lv?' filled-'+lv:'')+'"></div>').join('')+'</div><div class="skill-level-label">'+label+'</div><div class="skill-bar-wrap"><div class="skill-bar"><div class="fill" style="width:'+pct+'%;background:'+color+'"></div></div></div>'+(accessToken?'<div class="skill-delete" onclick="event.stopPropagation();confirmDelete(\'skill\',\''+s.id+'\',\''+s.name.replace(/'/g,'\\\'')+'\')" title="Delete skill"><svg><use href="#i-trash"/></svg></div>':'')+'<span class="skill-chevron ic ic-sm"><svg><use href="#i-chevron-down"/></svg></span></div>'+(s.notes?'<div class="skill-notes">'+s.notes+'</div>':'')+'</div>'
       }).join('')+'</div>'
   }).join('');
 }
