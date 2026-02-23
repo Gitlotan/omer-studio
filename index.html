@@ -401,9 +401,10 @@ function updateAuthUI(){
   const btns=document.querySelectorAll('.btn-add');
   if(accessToken&&currentUser){
     aa.innerHTML='<div class="signin-btn" onclick="handleSignOut()" style="gap:6px"><span class="ic ic-sm"><svg><use href="#i-log-out"/></svg></span> Sign out</div>';
-    document.getElementById('user-avatar').innerHTML=currentUser.picture?'<img src="'+currentUser.picture+'" alt="">':currentUser.name[0];
-    document.getElementById('user-display-name').textContent=currentUser.name;
-    document.getElementById('user-email-display').textContent=currentUser.email;
+    const uName=currentUser.name||currentUser.email||'User';
+    document.getElementById('user-avatar').innerHTML=currentUser.picture?'<img src="'+currentUser.picture+'" alt="">':uName.charAt(0);
+    document.getElementById('user-display-name').textContent=uName;
+    document.getElementById('user-email-display').textContent=currentUser.email||'';
     btns.forEach(b=>b.style.display='inline-flex');
   }else{
     aa.innerHTML='<div class="signin-btn" onclick="handleSignIn()"><span class="ic"><svg><use href="#i-log-in"/></svg></span> Sign in with Google</div>';
