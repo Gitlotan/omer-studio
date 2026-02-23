@@ -133,6 +133,41 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text-prim
 .back-link{display:inline-flex;align-items:center;gap:6px;font-size:13px;color:var(--text-muted);cursor:pointer;margin-bottom:20px;transition:color .15s}
 .back-link:hover{color:var(--accent)}
 
+/* Skills Matrix */
+.skills-overview{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:28px}
+.skill-overview-card{background:var(--card-bg);border:1px solid var(--card-border);border-radius:var(--radius-sm);padding:16px;text-align:center}
+.skill-overview-val{font-family:'Playfair Display',serif;font-size:24px;font-weight:600;margin-bottom:2px}
+.skill-overview-label{font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px}
+.skill-group{margin-bottom:28px}
+.skill-group-header{display:flex;align-items:center;gap:10px;margin-bottom:14px}
+.skill-group-header h3{font-size:15px;font-weight:600}
+.skill-group-count{font-size:12px;color:var(--text-muted)}
+.skill-group-icon{width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center}
+.skill-group-icon.creative{background:var(--tag-creative-soft);color:var(--tag-creative)}
+.skill-group-icon.technical{background:var(--info-soft);color:var(--info)}
+.skill-group-icon.tools{background:var(--tag-strategy-soft);color:var(--tag-strategy)}
+.skill-group-icon.business{background:var(--success-soft);color:var(--success)}
+.skill-card{background:var(--card-bg);border:1px solid var(--card-border);border-radius:var(--radius);padding:16px 20px;margin-bottom:8px;cursor:pointer;transition:all .2s}
+.skill-card:hover{box-shadow:var(--shadow-md);border-color:transparent}
+.skill-card.expanded{border-color:var(--accent)}
+.skill-card-top{display:flex;align-items:center;gap:14px}
+.skill-name{font-size:14px;font-weight:500;flex:1}
+.skill-level{display:flex;gap:4px;align-items:center;margin-right:8px}
+.skill-dot{width:10px;height:10px;border-radius:50%;background:var(--card-border);transition:background .3s}
+.skill-dot.filled-1{background:#C45B5B}
+.skill-dot.filled-2{background:var(--warning)}
+.skill-dot.filled-3{background:#D4A843}
+.skill-dot.filled-4{background:#8CAA5B}
+.skill-dot.filled-5{background:var(--success)}
+.skill-level-label{font-size:11px;color:var(--text-muted);min-width:65px;text-align:right}
+.skill-bar-wrap{flex:1;max-width:200px}
+.skill-bar{height:6px;background:var(--bg);border-radius:3px;overflow:hidden}
+.skill-bar .fill{height:100%;border-radius:3px;transition:width .6s}
+.skill-notes{padding:12px 0 0;margin-top:12px;border-top:1px solid var(--card-border);font-size:13px;color:var(--text-secondary);line-height:1.6;display:none}
+.skill-card.expanded .skill-notes{display:block}
+.skill-chevron{color:var(--text-muted);transition:transform .2s;flex-shrink:0}
+.skill-card.expanded .skill-chevron{transform:rotate(180deg)}
+
 /* Reference Board */
 .ref-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px}
 .ref-card{background:var(--card-bg);border:1px solid var(--card-border);border-radius:var(--radius);overflow:hidden;cursor:pointer;transition:all .25s}
@@ -173,7 +208,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text-prim
 .content .screen.active{animation:fadeIn .3s ease}
 ::-webkit-scrollbar{width:6px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:var(--card-border);border-radius:3px}
 @media(max-width:1200px){.projects-grid{grid-template-columns:repeat(2,1fr)}.dash-grid{grid-template-columns:repeat(2,1fr)}.ref-grid{grid-template-columns:repeat(2,1fr)}}
-@media(max-width:900px){.sidebar{display:none}.projects-grid{grid-template-columns:1fr}.dash-grid{grid-template-columns:repeat(2,1fr)}.project-detail-stats{grid-template-columns:repeat(2,1fr)}.ref-grid{grid-template-columns:1fr}}
+@media(max-width:900px){.sidebar{display:none}.projects-grid{grid-template-columns:1fr}.dash-grid{grid-template-columns:repeat(2,1fr)}.project-detail-stats{grid-template-columns:repeat(2,1fr)}.ref-grid{grid-template-columns:1fr}.skills-overview{grid-template-columns:repeat(2,1fr)}}
 </style>
 </head>
 <body>
@@ -200,6 +235,8 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text-prim
   <symbol id="i-arrow-left" viewBox="0 0 24 24"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></symbol>
   <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></symbol>
   <symbol id="i-x" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></symbol>
+  <symbol id="i-chevron-down" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></symbol>
+  <symbol id="i-star" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></symbol>
   <symbol id="i-external" viewBox="0 0 24 24"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></symbol>
 </svg>
 
@@ -213,6 +250,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text-prim
     <div class="sidebar-item active" data-nav="dashboard" onclick="nav('dashboard')"><span class="ic"><svg><use href="#i-layout"/></svg></span> Dashboard</div>
     <div class="sidebar-item" data-nav="all-tasks" onclick="nav('all-tasks')"><span class="ic"><svg><use href="#i-list"/></svg></span> All Tasks</div>
     <div class="sidebar-item" data-nav="references" onclick="nav('references')"><span class="ic"><svg><use href="#i-image"/></svg></span> Reference Board</div>
+    <div class="sidebar-item" data-nav="skills" onclick="nav('skills')"><span class="ic"><svg><use href="#i-star"/></svg></span> Skills Matrix</div>
   </div>
   <div class="sidebar-section">
     <div class="sidebar-section-label">Projects</div>
@@ -268,6 +306,13 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text-prim
       <div class="page-header"><h1>Reference Board</h1><p id="ref-subtitle">Visual inspiration and research collected by the team</p></div>
       <div class="filter-bar" id="ref-filters"></div>
       <div class="ref-grid" id="ref-grid"></div>
+    </div>
+    <!-- SKILLS MATRIX -->
+    <div class="screen" id="s-skills">
+      <div class="page-header"><h1>Skills Matrix</h1><p id="skills-subtitle">Tracking Omer's skills and learning goals</p></div>
+      <div class="skills-overview" id="skills-overview"></div>
+      <div class="filter-bar" id="skills-filters"></div>
+      <div id="skills-list"></div>
     </div>
     <!-- PROJECT DETAIL -->
     <div class="screen" id="s-project">
@@ -464,6 +509,73 @@ function closeModal(){
 }
 document.addEventListener('keydown',e=>{if(e.key==='Escape')closeModal()});
 
+// SKILLS MATRIX
+const LEVEL_LABELS={1:'Beginner',2:'Learning',3:'Intermediate',4:'Advanced',5:'Expert'};
+const LEVEL_COLORS={1:'#C45B5B',2:'var(--warning)',3:'#D4A843',4:'#8CAA5B',5:'var(--success)'};
+const TYPE_ICONS={Creative:'#i-image',Technical:'#i-cpu',Tools:'#i-settings',Business:'#i-store'};
+const TYPE_CLASSES={Creative:'creative',Technical:'technical',Tools:'tools',Business:'business'};
+let SKILL_FILTER='all';
+
+function renderSkills(){
+  const skills=DATA.skills;
+  const types=['all',...new Set(skills.map(s=>s.type).filter(Boolean))];
+  const avgLevel=skills.length?Math.round(skills.reduce((a,s)=>a+parseInt(s.level||0),0)/skills.length*10)/10:0;
+  const advanced=skills.filter(s=>parseInt(s.level)>=4).length;
+  const learning=skills.filter(s=>parseInt(s.level)<=2).length;
+
+  document.getElementById('skills-subtitle').textContent=`${skills.length} skills tracked · Average level: ${avgLevel}/5`;
+  document.getElementById('skills-overview').innerHTML=`
+    <div class="skill-overview-card"><div class="skill-overview-val">${skills.length}</div><div class="skill-overview-label">Total Skills</div></div>
+    <div class="skill-overview-card"><div class="skill-overview-val">${avgLevel}</div><div class="skill-overview-label">Avg Level</div></div>
+    <div class="skill-overview-card"><div class="skill-overview-val">${advanced}</div><div class="skill-overview-label">Advanced+</div></div>
+    <div class="skill-overview-card"><div class="skill-overview-val">${learning}</div><div class="skill-overview-label">To Develop</div></div>`;
+
+  document.getElementById('skills-filters').innerHTML=types.map(t=>
+    `<div class="filter-chip ${SKILL_FILTER===t?'active':''}" onclick="setSkillFilter('${t}')">${t==='all'?'All':t}</div>`
+  ).join('');
+
+  let filtered=skills;
+  if(SKILL_FILTER!=='all')filtered=skills.filter(s=>s.type===SKILL_FILTER);
+
+  // Group by type
+  const grouped={};
+  filtered.forEach(s=>{const t=s.type||'Other';if(!grouped[t])grouped[t]=[];grouped[t].push(s)});
+
+  const list=document.getElementById('skills-list');
+  if(!filtered.length){list.innerHTML='<div class="empty-state"><h3>No skills found</h3><p>Add skills in the Google Sheet → Skills tab</p></div>';return}
+
+  list.innerHTML=Object.entries(grouped).map(([type,items])=>{
+    const sorted=[...items].sort((a,b)=>parseInt(b.level||0)-parseInt(a.level||0));
+    const iconRef=TYPE_ICONS[type]||'#i-zap';
+    const cls=TYPE_CLASSES[type]||'creative';
+    return`<div class="skill-group">
+      <div class="skill-group-header">
+        <div class="skill-group-icon ${cls}"><span class="ic"><svg><use href="${iconRef}"/></svg></span></div>
+        <h3>${type}</h3>
+        <span class="skill-group-count">${items.length} skills</span>
+      </div>
+      ${sorted.map(s=>{
+        const lv=parseInt(s.level)||0;
+        const pct=lv*20;
+        const color=LEVEL_COLORS[lv]||'var(--text-muted)';
+        const label=LEVEL_LABELS[lv]||'Unknown';
+        return`<div class="skill-card" onclick="this.classList.toggle('expanded')">
+          <div class="skill-card-top">
+            <div class="skill-name">${s.name}</div>
+            <div class="skill-level">${[1,2,3,4,5].map(i=>`<div class="skill-dot${i<=lv?' filled-'+lv:''}"></div>`).join('')}</div>
+            <div class="skill-level-label">${label}</div>
+            <div class="skill-bar-wrap"><div class="skill-bar"><div class="fill" style="width:${pct}%;background:${color}"></div></div></div>
+            <span class="skill-chevron ic ic-sm"><svg><use href="#i-chevron-down"/></svg></span>
+          </div>
+          ${s.notes?`<div class="skill-notes">${s.notes}</div>`:''}
+        </div>`;
+      }).join('')}
+    </div>`;
+  }).join('');
+}
+
+function setSkillFilter(t){SKILL_FILTER=t;renderSkills()}
+
 // PROJECT DETAIL
 function showProject(pid){
   currentProjectId=pid;
@@ -494,15 +606,17 @@ function showProject(pid){
 function nav(id,label){
   FILTERS={status:'all',assignee:'all'};
   REF_FILTER='all';
+  SKILL_FILTER='all';
   document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
   const scr=document.getElementById('s-'+id);if(scr)scr.classList.add('active');
   document.querySelectorAll('.sidebar-item').forEach(i=>i.classList.remove('active'));
   const ni=document.querySelector(`.sidebar-item[data-nav="${id==='project'?'project-'+currentProjectId:id}"]`);
   if(ni)ni.classList.add('active');
   else if(id==='dashboard')document.querySelector('.sidebar-item[data-nav="dashboard"]')?.classList.add('active');
-  document.getElementById('bc').textContent=id==='dashboard'?'Dashboard':id==='all-tasks'?'All Tasks':id==='references'?'Reference Board':(label||'');
+  document.getElementById('bc').textContent=id==='dashboard'?'Dashboard':id==='all-tasks'?'All Tasks':id==='references'?'Reference Board':id==='skills'?'Skills Matrix':(label||'');
   if(id==='all-tasks')renderAllTasks();
   if(id==='references')renderReferences();
+  if(id==='skills')renderSkills();
   document.querySelector('.content').scrollTop=0;
 }
 
