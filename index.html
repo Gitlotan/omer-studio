@@ -363,7 +363,7 @@ function showProject(pid){
 }
 
 function nav(id,label){
-  if(id!=='project'&&id!=='all-tasks')FILTERS={status:'all',assignee:'all'};
+  FILTERS={status:'all',assignee:'all'};
   document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
   const scr=document.getElementById('s-'+id);if(scr)scr.classList.add('active');
   document.querySelectorAll('.sidebar-item').forEach(i=>i.classList.remove('active'));
