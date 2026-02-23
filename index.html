@@ -337,6 +337,7 @@ function setFilter(k,v){
 
 function showProject(pid){
   currentProjectId=pid;
+  FILTERS={status:'all',assignee:'all'};
   const p=DATA.projects.find(x=>x.id===pid);if(!p)return;
   const color=gc(p.color||p.category),icon=gi(p.icon);
   document.getElementById('project-header').innerHTML=`<div class="project-icon ${color}"><span class="ic ic-lg"><svg><use href="${icon}"/></svg></span></div><div class="project-detail-info"><h1>${p.name}</h1><p>${p.description||''}</p></div>`;
