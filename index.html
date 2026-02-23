@@ -20,14 +20,11 @@
 }
 *{margin:0;padding:0;box-sizing:border-box}
 body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text-primary);display:flex;height:100vh;overflow:hidden;font-size:14px}
-
 .ic{display:inline-flex;align-items:center;justify-content:center;flex-shrink:0}
 .ic svg{width:18px;height:18px;stroke-width:1.75;fill:none;stroke:currentColor;stroke-linecap:round;stroke-linejoin:round}
-.ic-sm svg{width:15px;height:15px}.ic-lg svg{width:20px;height:20px}.ic-xl svg{width:28px;height:28px}
-
-/* Sidebar */
+.ic-sm svg{width:15px;height:15px}.ic-lg svg{width:20px;height:20px}
 .sidebar{width:260px;min-width:260px;background:var(--sidebar-bg);display:flex;flex-direction:column;overflow-y:auto}
-.sidebar-logo{padding:28px 24px 20px;border-bottom:1px solid rgba(255,255,255,.06);display:flex;align-items:center;gap:12px}
+.sidebar-logo{padding:28px 24px 20px;border-bottom:1px solid rgba(255,255,255,.06);display:flex;align-items:center;gap:12px;cursor:pointer}
 .sidebar-logo .logo-icon{width:36px;height:36px;background:linear-gradient(135deg,var(--accent),#D4A843);border-radius:10px;display:flex;align-items:center;justify-content:center;font-family:'Playfair Display',serif;font-size:18px;font-weight:700;color:#fff}
 .sidebar-logo .logo-text{color:#fff;font-size:16px;font-weight:600;letter-spacing:-.3px}
 .sidebar-logo .logo-sub{color:var(--sidebar-text);font-size:11px;margin-top:1px}
@@ -42,46 +39,40 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text-prim
 .sidebar-user .avatar{width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,var(--accent),#D4A843);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:600;font-size:13px}
 .sidebar-user .user-info{color:var(--sidebar-text);font-size:12px}
 .sidebar-user .user-name{color:#fff;font-weight:500;font-size:13px}
-
-/* Main */
 .main{flex:1;display:flex;flex-direction:column;overflow:hidden}
 .topbar{height:60px;border-bottom:1px solid var(--card-border);background:#fff;display:flex;align-items:center;padding:0 32px;gap:16px;flex-shrink:0}
-.topbar-breadcrumb{font-size:13px;color:var(--text-muted)}
+.topbar-breadcrumb{font-size:13px;color:var(--text-muted);display:flex;align-items:center;gap:6px}
 .topbar-breadcrumb span{color:var(--text-primary);font-weight:500}
+.topbar-breadcrumb .bc-link{color:var(--text-muted);cursor:pointer;transition:color .15s}
+.topbar-breadcrumb .bc-link:hover{color:var(--accent)}
 .topbar-spacer{flex:1}
 .topbar-search{display:flex;align-items:center;gap:8px;background:var(--bg);border:1px solid var(--card-border);border-radius:var(--radius-sm);padding:7px 14px;font-size:13px;color:var(--text-muted);cursor:pointer;transition:border-color .15s}
 .topbar-search:hover{border-color:var(--accent)}
 .topbar-btn{width:36px;height:36px;border-radius:var(--radius-sm);border:1px solid var(--card-border);background:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--text-secondary);transition:all .15s}
 .topbar-btn:hover{border-color:var(--accent);color:var(--accent)}
-
 .content{flex:1;overflow-y:auto;padding:28px 32px}
 .page-header{margin-bottom:28px}
 .page-header h1{font-family:'Playfair Display',serif;font-size:28px;font-weight:600;letter-spacing:-.5px;margin-bottom:6px}
 .page-header p{color:var(--text-secondary);font-size:14px}
-
-/* Loading */
 .loading{display:flex;align-items:center;justify-content:center;height:200px;color:var(--text-muted);font-size:14px;gap:10px}
 .spinner{width:20px;height:20px;border:2px solid var(--card-border);border-top-color:var(--accent);border-radius:50%;animation:spin .6s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
-
-/* Stats */
-.dash-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;margin-bottom:28px}
-.stat-card{background:var(--card-bg);border:1px solid var(--card-border);border-radius:var(--radius);padding:22px;transition:all .2s}
+.dash-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:28px}
+.stat-card{background:var(--card-bg);border:1px solid var(--card-border);border-radius:var(--radius);padding:20px;transition:all .2s}
 .stat-card:hover{box-shadow:var(--shadow-md);border-color:transparent}
-.stat-icon{width:36px;height:36px;border-radius:var(--radius-sm);display:flex;align-items:center;justify-content:center;margin-bottom:14px}
+.stat-icon{width:36px;height:36px;border-radius:var(--radius-sm);display:flex;align-items:center;justify-content:center;margin-bottom:12px}
 .stat-icon.blue{background:var(--info-soft);color:var(--info)}
 .stat-icon.green{background:var(--success-soft);color:var(--success)}
 .stat-icon.warm{background:var(--accent-soft);color:var(--accent)}
-.stat-label{font-size:12px;font-weight:500;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px}
-.stat-value{font-family:'Playfair Display',serif;font-size:32px;font-weight:600;margin-bottom:6px}
+.stat-icon.purple{background:var(--tag-marketing-soft);color:var(--tag-marketing)}
+.stat-label{font-size:11px;font-weight:500;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px}
+.stat-value{font-family:'Playfair Display',serif;font-size:28px;font-weight:600;margin-bottom:4px}
 .stat-change{font-size:12px;color:var(--text-muted)}
-
-/* Project cards */
-.projects-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:16px;margin-bottom:28px}
-.project-card{background:var(--card-bg);border:1px solid var(--card-border);border-radius:var(--radius);padding:22px;cursor:pointer;transition:all .2s}
+.projects-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:28px}
+.project-card{background:var(--card-bg);border:1px solid var(--card-border);border-radius:var(--radius);padding:20px;cursor:pointer;transition:all .2s}
 .project-card:hover{box-shadow:var(--shadow-md);border-color:transparent;transform:translateY(-1px)}
-.project-card-header{display:flex;align-items:flex-start;gap:14px;margin-bottom:12px}
-.project-icon{width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.project-card-header{display:flex;align-items:flex-start;gap:12px;margin-bottom:10px}
+.project-icon{width:38px;height:38px;border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
 .project-icon.strategy{background:var(--tag-strategy-soft);color:var(--tag-strategy)}
 .project-icon.marketing{background:var(--tag-marketing-soft);color:var(--tag-marketing)}
 .project-icon.creative{background:var(--tag-creative-soft);color:var(--tag-creative)}
@@ -91,67 +82,64 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text-prim
 .project-tag.marketing{background:var(--tag-marketing-soft);color:var(--tag-marketing)}
 .project-tag.creative{background:var(--tag-creative-soft);color:var(--tag-creative)}
 .project-tag.finance{background:var(--tag-finance-soft);color:var(--tag-finance)}
-.project-card h3{font-size:15px;font-weight:600;margin-bottom:4px;letter-spacing:-.2px}
-.project-desc{font-size:13px;color:var(--text-secondary);line-height:1.5;margin-bottom:16px}
-.project-footer{display:flex;align-items:center;justify-content:space-between}
-.project-progress{flex:1;margin-right:16px}
+.project-card h3{font-size:14.5px;font-weight:600;margin-bottom:3px;letter-spacing:-.2px}
+.project-desc{font-size:13px;color:var(--text-secondary);line-height:1.5;margin-bottom:14px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.project-footer{display:flex;align-items:center}
+.project-progress{flex:1}
 .progress-bar{height:4px;background:var(--bg);border-radius:4px;overflow:hidden;margin-bottom:4px}
 .progress-bar .fill{height:100%;border-radius:4px;transition:width .6s}
 .progress-label{font-size:11px;color:var(--text-muted)}
-
-/* Section headers */
 .section-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
 .section-header h2{font-size:18px;font-weight:600;letter-spacing:-.3px}
 .view-all{font-size:13px;color:var(--accent);cursor:pointer;font-weight:500}
 .view-all:hover{text-decoration:underline}
-
-/* Task list */
+.filter-bar{display:flex;align-items:center;gap:8px;margin-bottom:20px;flex-wrap:wrap}
+.filter-chip{padding:6px 14px;border-radius:20px;font-size:12px;font-weight:500;cursor:pointer;transition:all .15s;border:1px solid var(--card-border);background:var(--card-bg);color:var(--text-secondary)}
+.filter-chip:hover{border-color:var(--accent);color:var(--accent)}
+.filter-chip.active{background:var(--sidebar-bg);color:#fff;border-color:var(--sidebar-bg)}
+.filter-divider{width:1px;height:20px;background:var(--card-border);margin:0 4px}
 .task-list{background:var(--card-bg);border:1px solid var(--card-border);border-radius:var(--radius);overflow:hidden}
-.task-row{display:flex;align-items:center;padding:14px 20px;gap:14px;border-bottom:1px solid var(--card-border);transition:background .1s;cursor:pointer}
+.task-row{display:flex;align-items:center;padding:14px 20px;gap:14px;border-bottom:1px solid var(--card-border);transition:background .1s}
 .task-row:last-child{border-bottom:none}
 .task-row:hover{background:var(--bg)}
 .task-check{width:18px;height:18px;border-radius:50%;border:2px solid var(--card-border);flex-shrink:0;display:flex;align-items:center;justify-content:center;transition:all .15s}
 .task-row:hover .task-check{border-color:var(--accent)}
 .task-check.done{background:var(--success);border-color:var(--success)}
-.task-info{flex:1}
-.task-name{font-size:13.5px;font-weight:500;margin-bottom:2px}
+.task-info{flex:1;min-width:0}
+.task-name{font-size:13.5px;font-weight:500;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .task-name.completed{text-decoration:line-through;color:var(--text-muted)}
 .task-meta{font-size:11.5px;color:var(--text-muted)}
-.task-assignee{width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:600;color:#fff}
-.task-status{padding:3px 10px;border-radius:20px;font-size:11px;font-weight:500}
+.task-assignee{width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:600;color:#fff;flex-shrink:0}
+.task-status{padding:3px 10px;border-radius:20px;font-size:11px;font-weight:500;white-space:nowrap;flex-shrink:0}
 .task-status.in-progress{background:var(--warning-soft);color:var(--warning)}
 .task-status.todo{background:var(--bg);color:var(--text-muted)}
 .task-status.done{background:var(--success-soft);color:var(--success)}
 .task-status.review{background:var(--info-soft);color:var(--info)}
-.task-due{font-size:12px;color:var(--text-muted);min-width:70px;text-align:right}
-
-/* Screens */
+.task-due{font-size:12px;color:var(--text-muted);min-width:70px;text-align:right;flex-shrink:0}
+.task-due.overdue{color:#C45B5B;font-weight:500}
+.project-detail-header{display:flex;align-items:center;gap:16px;margin-bottom:24px}
+.project-detail-header .project-icon{width:48px;height:48px}
+.project-detail-header .project-icon .ic-lg svg{width:24px;height:24px}
+.project-detail-info h1{font-family:'Playfair Display',serif;font-size:26px;font-weight:600;letter-spacing:-.5px;margin-bottom:4px}
+.project-detail-info p{color:var(--text-secondary);font-size:14px}
+.project-detail-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:24px}
+.mini-stat{background:var(--card-bg);border:1px solid var(--card-border);border-radius:var(--radius-sm);padding:14px 16px;text-align:center}
+.mini-stat .mini-val{font-family:'Playfair Display',serif;font-size:22px;font-weight:600;margin-bottom:2px}
+.mini-stat .mini-label{font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px}
 .screen{display:none}.screen.active{display:block}
-
-/* Empty state */
 .empty-state{text-align:center;padding:60px 20px;color:var(--text-muted)}
 .empty-state h3{font-size:16px;font-weight:500;margin-bottom:8px;color:var(--text-secondary)}
 .empty-state p{font-size:13px}
-
-/* Buttons */
-.btn{display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border-radius:var(--radius-sm);font-size:13px;font-weight:500;cursor:pointer;transition:all .15s;border:none;font-family:inherit}
-.btn-primary{background:var(--sidebar-bg);color:#fff}.btn-primary:hover{background:#333}
-
-/* Tab nav */
-.tab-nav{display:flex;border-bottom:1px solid var(--card-border);margin-bottom:24px}
-.tab-item{padding:10px 20px;font-size:13px;font-weight:500;color:var(--text-muted);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px;transition:all .15s}
-.tab-item:hover{color:var(--text-primary)}
-.tab-item.active{color:var(--text-primary);border-bottom-color:var(--accent)}
-
-/* Animations */
+.back-link{display:inline-flex;align-items:center;gap:6px;font-size:13px;color:var(--text-muted);cursor:pointer;margin-bottom:20px;transition:color .15s}
+.back-link:hover{color:var(--accent)}
 @keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
-.content>*{animation:fadeIn .3s ease}
+.content .screen.active{animation:fadeIn .3s ease}
 ::-webkit-scrollbar{width:6px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:var(--card-border);border-radius:3px}
+@media(max-width:1200px){.projects-grid{grid-template-columns:repeat(2,1fr)}.dash-grid{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:900px){.sidebar{display:none}.projects-grid{grid-template-columns:1fr}.dash-grid{grid-template-columns:repeat(2,1fr)}.project-detail-stats{grid-template-columns:repeat(2,1fr)}}
 </style>
 </head>
 <body>
-
-<!-- SVG Icons -->
 <svg xmlns="http://www.w3.org/2000/svg" style="display:none">
   <symbol id="i-layout" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/></symbol>
   <symbol id="i-compass" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"/></symbol>
@@ -171,17 +159,20 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text-prim
   <symbol id="i-check" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></symbol>
   <symbol id="i-folder" viewBox="0 0 24 24"><path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/></symbol>
   <symbol id="i-check-circle" viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></symbol>
+  <symbol id="i-list" viewBox="0 0 24 24"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></symbol>
+  <symbol id="i-arrow-left" viewBox="0 0 24 24"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></symbol>
+  <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></symbol>
 </svg>
 
-<!-- SIDEBAR -->
 <nav class="sidebar">
-  <div class="sidebar-logo">
+  <div class="sidebar-logo" onclick="nav('dashboard')">
     <div class="logo-icon">O</div>
     <div><div class="logo-text">Omer Studio</div><div class="logo-sub">Creative Business</div></div>
   </div>
   <div class="sidebar-section">
     <div class="sidebar-section-label">Overview</div>
-    <div class="sidebar-item active" onclick="nav('dashboard',this)"><span class="ic"><svg><use href="#i-layout"/></svg></span> Dashboard</div>
+    <div class="sidebar-item active" data-nav="dashboard" onclick="nav('dashboard')"><span class="ic"><svg><use href="#i-layout"/></svg></span> Dashboard</div>
+    <div class="sidebar-item" data-nav="all-tasks" onclick="nav('all-tasks')"><span class="ic"><svg><use href="#i-list"/></svg></span> All Tasks</div>
   </div>
   <div class="sidebar-section">
     <div class="sidebar-section-label">Projects</div>
@@ -204,308 +195,186 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text-prim
   </div>
 </nav>
 
-<!-- MAIN -->
 <div class="main">
   <div class="topbar">
-    <div class="topbar-breadcrumb">Omer Studio <span style="margin:0 6px;color:var(--text-muted)">›</span> <span id="bc">Dashboard</span></div>
+    <div class="topbar-breadcrumb"><span class="bc-link" onclick="nav('dashboard')">Omer Studio</span><span style="color:var(--text-muted)">›</span><span id="bc">Dashboard</span></div>
     <div class="topbar-spacer"></div>
     <div class="topbar-search"><span class="ic ic-sm"><svg><use href="#i-search"/></svg></span> Search anything...</div>
     <div class="topbar-btn"><span class="ic"><svg><use href="#i-bell"/></svg></span></div>
-    <div class="topbar-btn"><span class="ic"><svg><use href="#i-plus"/></svg></span></div>
   </div>
-
   <div class="content">
-    <!-- DASHBOARD -->
     <div class="screen active" id="s-dashboard">
-      <div class="page-header"><h1>Good morning</h1><p>Here's what's happening across Omer's business today</p></div>
-      <div class="dash-grid" id="stats-grid">
-        <div class="stat-card"><div class="stat-icon blue"><span class="ic ic-lg"><svg><use href="#i-folder"/></svg></span></div><div class="stat-label">Active Projects</div><div class="stat-value" id="stat-projects">—</div><div class="stat-change">Loading...</div></div>
-        <div class="stat-card"><div class="stat-icon green"><span class="ic ic-lg"><svg><use href="#i-check-circle"/></svg></span></div><div class="stat-label">Open Tasks</div><div class="stat-value" id="stat-tasks">—</div><div class="stat-change" id="stat-tasks-done"></div></div>
-        <div class="stat-card"><div class="stat-icon warm"><span class="ic ic-lg"><svg><use href="#i-image"/></svg></span></div><div class="stat-label">Reference Items</div><div class="stat-value" id="stat-refs">—</div><div class="stat-change" id="stat-refs-info"></div></div>
+      <div class="page-header"><h1 id="greeting">Good morning</h1><p>Here's what's happening across Omer's business today</p></div>
+      <div class="dash-grid">
+        <div class="stat-card"><div class="stat-icon blue"><span class="ic ic-lg"><svg><use href="#i-folder"/></svg></span></div><div class="stat-label">Active Projects</div><div class="stat-value" id="stat-projects">—</div><div class="stat-change" id="stat-projects-info">Loading...</div></div>
+        <div class="stat-card"><div class="stat-icon warm"><span class="ic ic-lg"><svg><use href="#i-clock"/></svg></span></div><div class="stat-label">In Progress</div><div class="stat-value" id="stat-progress">—</div><div class="stat-change" id="stat-progress-info"></div></div>
+        <div class="stat-card"><div class="stat-icon green"><span class="ic ic-lg"><svg><use href="#i-check-circle"/></svg></span></div><div class="stat-label">Completed</div><div class="stat-value" id="stat-done">—</div><div class="stat-change" id="stat-done-info"></div></div>
+        <div class="stat-card"><div class="stat-icon purple"><span class="ic ic-lg"><svg><use href="#i-image"/></svg></span></div><div class="stat-label">References</div><div class="stat-value" id="stat-refs">—</div><div class="stat-change" id="stat-refs-info"></div></div>
       </div>
       <div class="section-header"><h2>Projects</h2></div>
-      <div class="projects-grid" id="projects-grid">
-        <div class="loading"><div class="spinner"></div> Loading projects from Google Sheets...</div>
-      </div>
-      <div class="section-header"><h2>Recent Tasks</h2><span class="view-all">View all →</span></div>
-      <div id="tasks-list">
-        <div class="loading"><div class="spinner"></div> Loading tasks...</div>
-      </div>
+      <div class="projects-grid" id="projects-grid"><div class="loading"><div class="spinner"></div> Loading...</div></div>
+      <div class="section-header"><h2>Recent Tasks</h2><span class="view-all" onclick="nav('all-tasks')">View all →</span></div>
+      <div id="tasks-list"><div class="loading"><div class="spinner"></div> Loading...</div></div>
     </div>
-
-    <!-- PROJECT DETAIL (dynamic) -->
+    <div class="screen" id="s-all-tasks">
+      <div class="page-header"><h1>All Tasks</h1><p id="all-tasks-subtitle"></p></div>
+      <div class="filter-bar" id="task-filters"></div>
+      <div id="all-tasks-list"></div>
+    </div>
     <div class="screen" id="s-project">
-      <div class="page-header"><h1 id="project-title"></h1><p id="project-desc"></p></div>
-      <div class="tab-nav">
-        <div class="tab-item active">Tasks</div>
-        <div class="tab-item">Files</div>
-      </div>
+      <div class="back-link" onclick="nav('dashboard')"><span class="ic ic-sm"><svg><use href="#i-arrow-left"/></svg></span> Back to Dashboard</div>
+      <div class="project-detail-header" id="project-header"></div>
+      <div class="project-detail-stats" id="project-stats"></div>
       <div class="section-header"><h2>Tasks</h2></div>
+      <div class="filter-bar" id="project-filters"></div>
       <div id="project-tasks"></div>
     </div>
   </div>
 </div>
 
 <script>
-// ============================================
-// CONFIG
-// ============================================
-const SHEET_ID = '1x4muffjvZhrdbvsrBdTgkloo441-y1ThYGsgKKaT3mc';
+const SHEET_ID='1x4muffjvZhrdbvsrBdTgkloo441-y1ThYGsgKKaT3mc';
+const SHEET_GIDS={Projects:997517085,Tasks:1481389517,References:1244683688,Platforms:1804897256,Tools:436378319,Skills:2054960753};
+const ICONS={compass:'#i-compass',store:'#i-store',cpu:'#i-cpu',map:'#i-map',image:'#i-image',zap:'#i-zap',folder:'#i-folder',default:'#i-folder'};
+const COLORS={strategy:'strategy',marketing:'marketing',creative:'creative',finance:'finance',revenue:'marketing',tools:'creative',research:'creative',development:'finance',planning:'strategy'};
 
-// Sheet GIDs — update these after checking your sheet
-// Default GIDs for sheets created in order: 0, then auto-generated
-// You can find GIDs in the URL when clicking each tab: #gid=XXXXX
-const SHEET_GIDS = {
-  Projects: 997517085,
-  Tasks: 1481389517,
-  References: 1244683688,
-  Platforms: 1804897256,
-  Tools: 436378319,
-  Skills: 2054960753
-};
+let DATA={projects:[],tasks:[],references:[],platforms:[],tools:[],skills:[]};
+let FILTERS={status:'all',assignee:'all'};
+let currentProjectId=null;
 
-// Icon mapping
-const ICONS = {
-  compass:'#i-compass', store:'#i-store', cpu:'#i-cpu', map:'#i-map',
-  image:'#i-image', zap:'#i-zap', folder:'#i-folder', default:'#i-folder'
-};
-
-// Color mapping
-const COLORS = {
-  strategy:'strategy', marketing:'marketing', creative:'creative',
-  finance:'finance', revenue:'marketing', tools:'creative',
-  research:'creative', development:'finance', planning:'strategy'
-};
-
-// ============================================
-// DATA FETCHING
-// ============================================
-let DATA = { projects:[], tasks:[], references:[], platforms:[], tools:[], skills:[] };
-
-function parseCSV(text) {
-  if (!text || !text.trim()) return [];
-  const lines = [];
-  let current = '';
-  let inQuotes = false;
-  // Split into lines respecting quoted newlines
-  for (let i = 0; i < text.length; i++) {
-    const ch = text[i];
-    if (ch === '"') { inQuotes = !inQuotes; current += ch; }
-    else if ((ch === '\n' || ch === '\r') && !inQuotes) {
-      if (current.trim()) lines.push(current);
-      current = '';
-      if (ch === '\r' && text[i+1] === '\n') i++;
-    } else { current += ch; }
-  }
-  if (current.trim()) lines.push(current);
-  if (lines.length < 1) return [];
-
-  function splitCSVLine(line) {
-    const fields = [];
-    let field = '';
-    let inQ = false;
-    for (let i = 0; i < line.length; i++) {
-      const c = line[i];
-      if (c === '"') {
-        if (inQ && line[i+1] === '"') { field += '"'; i++; }
-        else inQ = !inQ;
-      } else if (c === ',' && !inQ) { fields.push(field); field = ''; }
-      else field += c;
-    }
-    fields.push(field);
-    return fields;
-  }
-
-  const headers = splitCSVLine(lines[0]);
-  return lines.slice(1).map(line => {
-    const values = splitCSVLine(line);
-    const obj = {};
-    headers.forEach((h, i) => { obj[h] = values[i] || ''; });
-    return obj;
-  });
+function parseCSV(t){
+  if(!t||!t.trim())return[];
+  const lines=[];let cur='',inQ=false;
+  for(let i=0;i<t.length;i++){const c=t[i];if(c==='"'){inQ=!inQ;cur+=c}else if((c==='\n'||c==='\r')&&!inQ){if(cur.trim())lines.push(cur);cur='';if(c==='\r'&&t[i+1]==='\n')i++}else cur+=c}
+  if(cur.trim())lines.push(cur);if(lines.length<1)return[];
+  function sp(l){const f=[];let fd='',q=false;for(let i=0;i<l.length;i++){const c=l[i];if(c==='"'){if(q&&l[i+1]==='"'){fd+='"';i++}else q=!q}else if(c===','&&!q){f.push(fd);fd=''}else fd+=c}f.push(fd);return f}
+  const h=sp(lines[0]);return lines.slice(1).map(l=>{const v=sp(l),o={};h.forEach((k,i)=>{o[k]=v[i]||''});return o});
 }
 
-async function fetchSheet(sheetName) {
-  try {
-    // Method 1: Try gviz JSONP endpoint
-    const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(sheetName)}`;
-    const res = await fetch(url);
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    const text = await res.text();
-    return parseCSV(text);
-  } catch(e1) {
-    try {
-      // Method 2: Try published CSV with GID
-      const gid = SHEET_GIDS[sheetName];
-      if (gid !== null && gid !== undefined) {
-        const url2 = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv&gid=${gid}`;
-        const res2 = await fetch(url2);
-        if (!res2.ok) throw new Error(`HTTP ${res2.status}`);
-        const text2 = await res2.text();
-        return parseCSV(text2);
-      }
-      throw e1;
-    } catch(e2) {
-      console.error(`Error fetching ${sheetName}:`, e2);
-      return [];
-    }
-  }
+async function fetchSheet(n){
+  try{const r=await fetch(`https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(n)}`);if(!r.ok)throw new Error;return parseCSV(await r.text())}
+  catch(e){try{const g=SHEET_GIDS[n];if(g!=null){const r=await fetch(`https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv&gid=${g}`);if(!r.ok)throw new Error;return parseCSV(await r.text())}throw e}catch(e2){console.error(`Error fetching ${n}:`,e2);return[]}}
 }
 
-async function loadAllData() {
-  const [projects, tasks, references, platforms, tools, skills] = await Promise.all([
-    fetchSheet('Projects'),
-    fetchSheet('Tasks'),
-    fetchSheet('References'),
-    fetchSheet('Platforms'),
-    fetchSheet('Tools'),
-    fetchSheet('Skills')
-  ]);
-  DATA = { projects, tasks, references, platforms, tools, skills };
+async function loadAllData(){
+  const r=await Promise.all(['Projects','Tasks','References','Platforms','Tools','Skills'].map(fetchSheet));
+  DATA={projects:r[0],tasks:r[1],references:r[2],platforms:r[3],tools:r[4],skills:r[5]};
   renderDashboard();
 }
 
-// ============================================
-// RENDERING
-// ============================================
-function getColorClass(cat) {
-  if (!cat) return 'strategy';
-  const lower = cat.toLowerCase();
-  return COLORS[lower] || 'strategy';
-}
+function gc(c){return COLORS[(c||'').toLowerCase()]||'strategy'}
+function gi(n){return ICONS[n]||ICONS.default}
+function isOverdue(d){return d&&d<new Date().toISOString().split('T')[0]}
 
-function getIcon(iconName) {
-  if (!iconName) return ICONS.default;
-  return ICONS[iconName] || ICONS.default;
-}
+function renderDashboard(){
+  const h=new Date().getHours();
+  document.getElementById('greeting').textContent=h<12?'Good morning':h<17?'Good afternoon':'Good evening';
+  const active=DATA.projects.filter(p=>p.status==='Active').length||DATA.projects.length;
+  const inP=DATA.tasks.filter(t=>t.status==='In Progress').length;
+  const done=DATA.tasks.filter(t=>t.status==='Done').length;
+  const total=DATA.tasks.length;
+  document.getElementById('stat-projects').textContent=active;
+  document.getElementById('stat-projects-info').textContent=`${total} total tasks`;
+  document.getElementById('stat-progress').textContent=inP;
+  document.getElementById('stat-progress-info').textContent=`${DATA.tasks.filter(t=>t.status==='To Do').length} waiting`;
+  document.getElementById('stat-done').textContent=done;
+  document.getElementById('stat-done-info').textContent=total?`${Math.round(done/total*100)}% completion`:'0%';
+  document.getElementById('stat-refs').textContent=DATA.references.length;
+  document.getElementById('stat-refs-info').textContent=DATA.references.length?`${DATA.references.length} collected`:'None yet';
 
-function renderDashboard() {
-  // Stats
-  const activeProjects = DATA.projects.filter(p => p.status === 'Active').length || DATA.projects.length;
-  const openTasks = DATA.tasks.filter(t => t.status !== 'Done').length;
-  const doneTasks = DATA.tasks.filter(t => t.status === 'Done').length;
-  const refCount = DATA.references.length;
-
-  document.getElementById('stat-projects').textContent = activeProjects || '0';
-  document.getElementById('stat-tasks').textContent = openTasks || '0';
-  document.getElementById('stat-tasks-done').textContent = doneTasks ? `${doneTasks} completed` : 'No tasks yet';
-  document.getElementById('stat-refs').textContent = refCount || '0';
-  document.getElementById('stat-refs-info').textContent = refCount ? `${refCount} items collected` : 'No references yet';
-
-  // Projects grid
-  const grid = document.getElementById('projects-grid');
-  if (DATA.projects.length === 0) {
-    grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1">
-      <h3>No projects yet</h3>
-      <p>Add your first project in the Google Sheet → Projects tab</p>
-    </div>`;
-  } else {
-    grid.innerHTML = DATA.projects.map(p => {
-      const color = getColorClass(p.color || p.category);
-      const icon = getIcon(p.icon);
-      const projectTasks = DATA.tasks.filter(t => t.project_id === p.id);
-      const doneTasks = projectTasks.filter(t => t.status === 'Done').length;
-      const progress = p.progress || (projectTasks.length ? Math.round(doneTasks/projectTasks.length*100) : 0);
-      const remaining = projectTasks.length - doneTasks;
-      return `<div class="project-card" onclick="showProject('${p.id}')">
-        <div class="project-card-header">
-          <div class="project-icon ${color}"><span class="ic ic-lg"><svg><use href="${icon}"/></svg></span></div>
-          <div>
-            <span class="project-tag ${color}">${p.category || 'Project'}</span>
-            <h3>${p.name}</h3>
-          </div>
-        </div>
-        <p class="project-desc">${p.description || ''}</p>
-        <div class="project-footer">
-          <div class="project-progress">
-            <div class="progress-bar"><div class="fill" style="width:${progress}%;background:var(--tag-${color})"></div></div>
-            <span class="progress-label">${progress}%${remaining > 0 ? ` · ${remaining} tasks left` : ''}</span>
-          </div>
-        </div>
-      </div>`;
-    }).join('');
-  }
-
-  // Sidebar projects
-  const sidebarProjects = document.getElementById('sidebar-projects');
-  sidebarProjects.innerHTML = DATA.projects.map(p => {
-    const icon = getIcon(p.icon);
-    const taskCount = DATA.tasks.filter(t => t.project_id === p.id && t.status !== 'Done').length;
-    return `<div class="sidebar-item" onclick="showProject('${p.id}');this.parentElement.querySelectorAll('.sidebar-item').forEach(i=>i.classList.remove('active'));this.classList.add('active')">
-      <span class="ic"><svg><use href="${icon}"/></svg></span> ${p.name}
-      ${taskCount ? `<span class="badge">${taskCount}</span>` : ''}
-    </div>`;
+  const grid=document.getElementById('projects-grid');
+  if(!DATA.projects.length){grid.innerHTML='<div class="empty-state" style="grid-column:1/-1"><h3>No projects yet</h3><p>Add projects in the Google Sheet → Projects tab</p></div>';return}
+  grid.innerHTML=DATA.projects.map(p=>{
+    const color=gc(p.color||p.category),icon=gi(p.icon),pt=DATA.tasks.filter(t=>t.project_id===p.id),dt=pt.filter(t=>t.status==='Done').length;
+    const prog=p.progress||(pt.length?Math.round(dt/pt.length*100):0),rem=pt.length-dt;
+    return`<div class="project-card" onclick="showProject('${p.id}')"><div class="project-card-header"><div class="project-icon ${color}"><span class="ic ic-lg"><svg><use href="${icon}"/></svg></span></div><div><span class="project-tag ${color}">${p.category||'Project'}</span><h3>${p.name}</h3></div></div><p class="project-desc">${p.description||''}</p><div class="project-footer"><div class="project-progress"><div class="progress-bar"><div class="fill" style="width:${prog}%;background:var(--tag-${color})"></div></div><span class="progress-label">${prog}%${rem>0?` · ${rem} tasks left`:''}</span></div></div></div>`
   }).join('');
 
-  // Recent tasks
-  renderTaskList(DATA.tasks.slice(0, 8), 'tasks-list');
+  document.getElementById('sidebar-projects').innerHTML=DATA.projects.map(p=>{
+    const tc=DATA.tasks.filter(t=>t.project_id===p.id&&t.status!=='Done').length;
+    return`<div class="sidebar-item" data-nav="project-${p.id}" onclick="showProject('${p.id}')"><span class="ic"><svg><use href="${gi(p.icon)}"/></svg></span> ${p.name}${tc?`<span class="badge">${tc}</span>`:''}</div>`
+  }).join('');
+
+  renderTaskList(DATA.tasks.slice(0,8),'tasks-list',true);
 }
 
-function renderTaskList(tasks, containerId) {
-  const container = document.getElementById(containerId);
-  if (tasks.length === 0) {
-    container.innerHTML = `<div class="empty-state"><h3>No tasks yet</h3><p>Add tasks in the Google Sheet → Tasks tab</p></div>`;
-    return;
-  }
-  // Sort: in-progress first, then todo, then done
-  const order = {'In Progress':0, 'To Do':1, 'Review':2, 'Done':3};
-  const sorted = [...tasks].sort((a,b) => (order[a.status]||1) - (order[b.status]||1));
-  
-  container.innerHTML = `<div class="task-list">${sorted.map(t => {
-    const isDone = t.status === 'Done';
-    const statusClass = t.status === 'In Progress' ? 'in-progress' : t.status === 'Done' ? 'done' : t.status === 'Review' ? 'review' : 'todo';
-    const project = DATA.projects.find(p => p.id === t.project_id);
-    const assigneeColor = t.assigned_to === 'Omer' ? 'var(--accent)' : 'var(--info)';
-    const assigneeInitial = t.assigned_to ? t.assigned_to.charAt(0) : '?';
-    return `<div class="task-row">
-      <div class="task-check${isDone?' done':''}">
-        ${isDone ? '<svg style="width:11px;height:11px;stroke:#fff;stroke-width:3;fill:none"><use href="#i-check"/></svg>' : ''}
-      </div>
-      <div class="task-info">
-        <div class="task-name${isDone?' completed':''}">${t.name}</div>
-        <div class="task-meta">${project ? project.name : (t.project_id || '')}</div>
-      </div>
-      <div class="task-assignee" style="background:${assigneeColor}">${assigneeInitial}</div>
-      <div class="task-status ${statusClass}">${t.status || 'To Do'}</div>
-      <div class="task-due">${t.due_date || ''}</div>
-    </div>`;
+function renderTaskList(tasks,id,showProj){
+  const el=document.getElementById(id);
+  if(!tasks.length){el.innerHTML='<div class="empty-state"><h3>No tasks found</h3><p>Try changing filters or add tasks in the Sheet</p></div>';return}
+  const order={'In Progress':0,'To Do':1,'Review':2,'Done':3};
+  const s=[...tasks].sort((a,b)=>(order[a.status]||1)-(order[b.status]||1));
+  el.innerHTML=`<div class="task-list">${s.map(t=>{
+    const done=t.status==='Done',sc=t.status==='In Progress'?'in-progress':done?'done':t.status==='Review'?'review':'todo';
+    const proj=DATA.projects.find(p=>p.id===t.project_id),ac=t.assigned_to==='Omer'?'var(--accent)':'var(--info)';
+    const over=!done&&isOverdue(t.due_date),meta=showProj?(proj?proj.name:''):(t.description||'');
+    return`<div class="task-row"><div class="task-check${done?' done':''}">${done?'<svg style="width:11px;height:11px;stroke:#fff;stroke-width:3;fill:none"><use href="#i-check"/></svg>':''}</div><div class="task-info"><div class="task-name${done?' completed':''}">${t.name}</div><div class="task-meta">${meta}</div></div><div class="task-assignee" style="background:${ac}" title="${t.assigned_to||''}">${t.assigned_to?t.assigned_to[0]:'?'}</div><div class="task-status ${sc}">${t.status||'To Do'}</div><div class="task-due${over?' overdue':''}">${t.due_date||''}</div></div>`
   }).join('')}</div>`;
 }
 
-function showProject(projectId) {
-  const project = DATA.projects.find(p => p.id === projectId);
-  if (!project) return;
-  
-  document.getElementById('project-title').textContent = project.name;
-  document.getElementById('project-desc').textContent = project.description || '';
-  document.getElementById('bc').textContent = project.name;
-  
-  const projectTasks = DATA.tasks.filter(t => t.project_id === projectId);
-  renderTaskList(projectTasks, 'project-tasks');
-  
-  // Switch screen
-  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-  document.getElementById('s-project').classList.add('active');
-  document.querySelector('.content').scrollTop = 0;
+function renderAllTasks(){
+  const total=DATA.tasks.length,done=DATA.tasks.filter(t=>t.status==='Done').length;
+  document.getElementById('all-tasks-subtitle').textContent=`${total} tasks · ${done} completed · ${total-done} remaining`;
+  document.getElementById('task-filters').innerHTML=`
+    <div class="filter-chip ${FILTERS.status==='all'?'active':''}" onclick="setFilter('status','all')">All</div>
+    <div class="filter-chip ${FILTERS.status==='In Progress'?'active':''}" onclick="setFilter('status','In Progress')">In Progress</div>
+    <div class="filter-chip ${FILTERS.status==='To Do'?'active':''}" onclick="setFilter('status','To Do')">To Do</div>
+    <div class="filter-chip ${FILTERS.status==='Done'?'active':''}" onclick="setFilter('status','Done')">Done</div>
+    <div class="filter-divider"></div>
+    <div class="filter-chip ${FILTERS.assignee==='all'?'active':''}" onclick="setFilter('assignee','all')">Everyone</div>
+    <div class="filter-chip ${FILTERS.assignee==='Omer'?'active':''}" onclick="setFilter('assignee','Omer')">Omer</div>
+    <div class="filter-chip ${FILTERS.assignee==='Lotan'?'active':''}" onclick="setFilter('assignee','Lotan')">Lotan</div>`;
+  let f=DATA.tasks;
+  if(FILTERS.status!=='all')f=f.filter(t=>t.status===FILTERS.status);
+  if(FILTERS.assignee!=='all')f=f.filter(t=>t.assigned_to===FILTERS.assignee);
+  renderTaskList(f,'all-tasks-list',true);
 }
 
-// ============================================
-// NAVIGATION
-// ============================================
-const PAGE_NAMES = {dashboard:'Dashboard'};
-
-function nav(id, el) {
-  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-  document.getElementById('s-' + id).classList.add('active');
-  document.querySelectorAll('.sidebar-item').forEach(i => i.classList.remove('active'));
-  if (el) el.classList.add('active');
-  document.getElementById('bc').textContent = PAGE_NAMES[id] || 'Dashboard';
-  document.querySelector('.content').scrollTop = 0;
+function setFilter(k,v){
+  FILTERS[k]=v;
+  if(document.getElementById('s-all-tasks').classList.contains('active'))renderAllTasks();
+  if(document.getElementById('s-project').classList.contains('active')&&currentProjectId)showProject(currentProjectId);
 }
 
-// ============================================
-// INIT
-// ============================================
+function showProject(pid){
+  currentProjectId=pid;
+  const p=DATA.projects.find(x=>x.id===pid);if(!p)return;
+  const color=gc(p.color||p.category),icon=gi(p.icon);
+  document.getElementById('project-header').innerHTML=`<div class="project-icon ${color}"><span class="ic ic-lg"><svg><use href="${icon}"/></svg></span></div><div class="project-detail-info"><h1>${p.name}</h1><p>${p.description||''}</p></div>`;
+  const pt=DATA.tasks.filter(t=>t.project_id===pid),done=pt.filter(t=>t.status==='Done').length,inP=pt.filter(t=>t.status==='In Progress').length,todo=pt.filter(t=>t.status==='To Do').length,prog=pt.length?Math.round(done/pt.length*100):0;
+  document.getElementById('project-stats').innerHTML=`
+    <div class="mini-stat"><div class="mini-val">${pt.length}</div><div class="mini-label">Total</div></div>
+    <div class="mini-stat"><div class="mini-val">${inP}</div><div class="mini-label">In Progress</div></div>
+    <div class="mini-stat"><div class="mini-val">${todo}</div><div class="mini-label">To Do</div></div>
+    <div class="mini-stat"><div class="mini-val">${prog}%</div><div class="mini-label">Complete</div></div>`;
+  document.getElementById('project-filters').innerHTML=`
+    <div class="filter-chip ${FILTERS.status==='all'?'active':''}" onclick="setFilter('status','all')">All (${pt.length})</div>
+    <div class="filter-chip ${FILTERS.status==='In Progress'?'active':''}" onclick="setFilter('status','In Progress')">In Progress (${inP})</div>
+    <div class="filter-chip ${FILTERS.status==='To Do'?'active':''}" onclick="setFilter('status','To Do')">To Do (${todo})</div>
+    <div class="filter-chip ${FILTERS.status==='Done'?'active':''}" onclick="setFilter('status','Done')">Done (${done})</div>
+    <div class="filter-divider"></div>
+    <div class="filter-chip ${FILTERS.assignee==='all'?'active':''}" onclick="setFilter('assignee','all')">Everyone</div>
+    <div class="filter-chip ${FILTERS.assignee==='Omer'?'active':''}" onclick="setFilter('assignee','Omer')">Omer</div>
+    <div class="filter-chip ${FILTERS.assignee==='Lotan'?'active':''}" onclick="setFilter('assignee','Lotan')">Lotan</div>`;
+  let f=pt;
+  if(FILTERS.status!=='all')f=f.filter(t=>t.status===FILTERS.status);
+  if(FILTERS.assignee!=='all')f=f.filter(t=>t.assigned_to===FILTERS.assignee);
+  renderTaskList(f,'project-tasks',false);
+  nav('project',p.name);
+}
+
+function nav(id,label){
+  if(id!=='project'&&id!=='all-tasks')FILTERS={status:'all',assignee:'all'};
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  const scr=document.getElementById('s-'+id);if(scr)scr.classList.add('active');
+  document.querySelectorAll('.sidebar-item').forEach(i=>i.classList.remove('active'));
+  const ni=document.querySelector(`.sidebar-item[data-nav="${id==='project'?'project-'+currentProjectId:id}"]`);
+  if(ni)ni.classList.add('active');
+  else if(id==='dashboard')document.querySelector('.sidebar-item[data-nav="dashboard"]')?.classList.add('active');
+  document.getElementById('bc').textContent=id==='dashboard'?'Dashboard':id==='all-tasks'?'All Tasks':(label||'');
+  if(id==='all-tasks')renderAllTasks();
+  document.querySelector('.content').scrollTop=0;
+}
+
 loadAllData();
 </script>
 </body>
