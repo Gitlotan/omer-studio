@@ -338,6 +338,13 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text-prim
   </div>
   <div class="content">
     <div class="screen active" id="s-dashboard">
+      <div class="page-header"><div class="page-header-text"><h1 id="greeting">Good morning</h1><p>Here's what's happening across Omer's business today</p></div></div>
+      <div class="dash-grid">
+        <div class="stat-card"><div class="stat-icon blue"><span class="ic ic-lg"><svg><use href="#i-folder"/></svg></span></div><div class="stat-label">Active Projects</div><div class="stat-value" id="stat-projects">—</div><div class="stat-change" id="stat-projects-info">Loading...</div></div>
+        <div class="stat-card"><div class="stat-icon warm"><span class="ic ic-lg"><svg><use href="#i-clock"/></svg></span></div><div class="stat-label">In Progress</div><div class="stat-value" id="stat-progress">—</div><div class="stat-change" id="stat-progress-info"></div></div>
+        <div class="stat-card"><div class="stat-icon green"><span class="ic ic-lg"><svg><use href="#i-check-circle"/></svg></span></div><div class="stat-label">Completed</div><div class="stat-value" id="stat-done">—</div><div class="stat-change" id="stat-done-info"></div></div>
+        <div class="stat-card" style="cursor:pointer" onclick="nav('references')"><div class="stat-icon purple"><span class="ic ic-lg"><svg><use href="#i-image"/></svg></span></div><div class="stat-label">References</div><div class="stat-value" id="stat-refs">—</div><div class="stat-change" id="stat-refs-info"></div></div>
+      </div>
       <div class="section-header"><h2>Projects</h2></div>
       <div class="projects-grid" id="projects-grid"><div class="loading"><div class="spinner"></div> Loading...</div></div>
       <div class="section-header"><h2>Recent Tasks</h2><span class="view-all" onclick="nav('all-tasks')">View all →</span></div>
@@ -648,6 +655,20 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape'){if(document.getElem
 
 // DASHBOARD
 function renderDashboard(){
+  const h=new Date().getHours();
+  document.getElementById('greeting').textContent=h<12?'Good morning':h<17?'Good afternoon':'Good evening';
+  const active=DATA.projects.filter(p=>p.status==='Active').length||DATA.projects.length;
+  const inP=DATA.tasks.filter(t=>t.status==='In Progress').length;
+  const done=DATA.tasks.filter(t=>t.status==='Done').length;
+  const total=DATA.tasks.length;
+  document.getElementById('stat-projects').textContent=active;
+  document.getElementById('stat-projects-info').textContent=total+' total tasks';
+  document.getElementById('stat-progress').textContent=inP;
+  document.getElementById('stat-progress-info').textContent=DATA.tasks.filter(t=>t.status==='To Do').length+' waiting';
+  document.getElementById('stat-done').textContent=done;
+  document.getElementById('stat-done-info').textContent=total?Math.round(done/total*100)+'% completion':'0%';
+  document.getElementById('stat-refs').textContent=DATA.references.length;
+  document.getElementById('stat-refs-info').textContent=DATA.references.length?DATA.references.length+' collected':'None yet';
 
   const grid=document.getElementById('projects-grid');
   if(!DATA.projects.length){grid.innerHTML='<div class="empty-state" style="grid-column:1/-1"><h3>No projects yet</h3><p>Add projects in the Google Sheet → Projects tab</p></div>';return}
