@@ -121,6 +121,17 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text-prim
 .task-status.review{background:var(--info-soft);color:var(--info)}
 .task-due{font-size:12px;color:var(--text-muted);min-width:70px;text-align:right;flex-shrink:0}
 .task-due.overdue{color:#C45B5B;font-weight:500}
+.time-sections{display:flex;flex-direction:column;gap:20px}
+.time-section{border-radius:var(--radius);overflow:hidden}
+.time-section-header{display:flex;align-items:center;padding:12px 20px;background:var(--bg);border:1px solid var(--card-border);border-radius:var(--radius) var(--radius) 0 0}
+.time-section-title{font-size:13px;font-weight:600;display:flex;align-items:center;gap:8px}
+.time-section-count{font-size:11px;font-weight:500;color:var(--text-muted);background:var(--card-border);padding:1px 7px;border-radius:10px}
+.time-section-body{background:var(--card-bg);border:1px solid var(--card-border);border-top:none;border-radius:0 0 var(--radius) var(--radius);min-height:44px;transition:background .2s}
+.time-section-body.drag-over{background:var(--accent-soft);outline:2px dashed var(--accent);outline-offset:-2px}
+.time-section-body .empty-drop{padding:20px;text-align:center;color:var(--text-muted);font-size:12px}
+.task-row[draggable="true"]{cursor:grab}
+.task-row.dragging{opacity:.3}
+.task-assignee-tag{padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600;white-space:nowrap;flex-shrink:0}
 .project-detail-header{display:flex;align-items:center;gap:16px;margin-bottom:24px}
 .project-detail-header .project-icon{width:48px;height:48px}
 .project-detail-header .project-icon .ic-lg svg{width:24px;height:24px}
@@ -353,7 +364,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text-prim
     <div class="screen" id="s-all-tasks">
       <div class="page-header"><div class="page-header-text"><h1>All Tasks</h1><p id="all-tasks-subtitle"></p></div><button class="btn-add" onclick="openAddForm('task')" id="btn-add-task" style="display:none"><span class="ic ic-sm"><svg><use href="#i-plus"/></svg></span> Add Task</button></div>
       <div class="filter-bar" id="task-filters"></div>
-      <div id="all-tasks-list"></div>
+      <div class="time-sections" id="time-sections"></div>
     </div>
     <div class="screen" id="s-references">
       <div class="page-header"><div class="page-header-text"><h1>Reference Board</h1><p id="ref-subtitle">Visual inspiration and research collected by the team</p></div><button class="btn-add" onclick="openAddForm('reference')" id="btn-add-ref" style="display:none"><span class="ic ic-sm"><svg><use href="#i-plus"/></svg></span> Add Reference</button></div>
@@ -702,7 +713,25 @@ function renderTaskList(tasks,id,showProj){
   }).join('')+'</div>';
 }
 
-// ALL TASKS
+// ALL TASKS — TIME-BASED SECTIONS
+function getDateCat(d){
+  if(!d)return 'later';
+  const now=new Date();now.setHours(0,0,0,0);
+  const tmr=new Date(now);tmr.setDate(tmr.getDate()+1);
+  const wEnd=new Date(now);wEnd.setDate(wEnd.getDate()+6);
+  const dt=new Date(d+'T00:00:00');
+  if(dt<=now)return 'today';
+  if(dt.getTime()===tmr.getTime())return 'tomorrow';
+  if(dt<=wEnd)return 'week';
+  return 'later';
+}
+function sectionDate(sec){
+  const d=new Date();d.setHours(0,0,0,0);
+  if(sec==='today')return d.toISOString().split('T')[0];
+  if(sec==='tomorrow'){d.setDate(d.getDate()+1);return d.toISOString().split('T')[0]}
+  if(sec==='week'){d.setDate(d.getDate()+2);return d.toISOString().split('T')[0]}
+  return '';
+}
 function renderAllTasks(){
   const total=DATA.tasks.length,done=DATA.tasks.filter(t=>t.status==='Done').length;
   document.getElementById('all-tasks-subtitle').textContent=total+' tasks · '+done+' completed · '+(total-done)+' remaining';
@@ -718,7 +747,162 @@ function renderAllTasks(){
   let f=DATA.tasks;
   if(FILTERS.status!=='all')f=f.filter(t=>t.status===FILTERS.status);
   if(FILTERS.assignee!=='all')f=f.filter(t=>t.assigned_to===FILTERS.assignee);
-  renderTaskList(f,'all-tasks-list',true);
+  const secs={today:[],tomorrow:[],week:[],later:[]};
+  f.forEach(t=>secs[getDateCat(t.due_date)].push(t));
+  // Apply saved order from localStorage
+  const savedOrder=JSON.parse(localStorage.getItem('taskOrder')||'{}');
+  ['today','tomorrow','week','later'].forEach(k=>{
+    if(savedOrder[k]){
+      const order=savedOrder[k];
+      secs[k].sort((a,b)=>{const ai=order.indexOf(a.id),bi=order.indexOf(b.id);return(ai===-1?999:ai)-(bi===-1?999:bi)});
+    }
+  });
+  const labels={today:'\u{1F4C5} Today',tomorrow:'\u{1F4C6} Tomorrow',week:'\u{1F4CB} Rest of Week',later:'\u{1F52E} Later'};
+  const cont=document.getElementById('time-sections');
+  cont.innerHTML=['today','tomorrow','week','later'].map(k=>{
+    const tasks=secs[k];
+    const rows=tasks.length?tasks.map(t=>renderTimeTask(t)).join(''):'<div class="empty-drop">Drop tasks here</div>';
+    return '<div class="time-section"><div class="time-section-header"><div class="time-section-title">'+labels[k]+' <span class="time-section-count">'+tasks.length+'</span></div></div><div class="time-section-body" data-section="'+k+'">'+rows+'</div></div>';
+  }).join('');
+  initTaskDrag();
+}
+function renderTimeTask(t){
+  const done=t.status==='Done',sc=t.status==='In Progress'?'in-progress':done?'done':t.status==='Review'?'review':'todo';
+  const over=!done&&isOverdue(t.due_date);
+  const proj=DATA.projects.find(p=>p.id===t.project_id);
+  const checkClick=accessToken?'onclick="event.stopPropagation();toggleTaskStatus(\''+t.id+'\')"':'';
+  const delBtn=accessToken?'<div class="task-delete" onclick="event.stopPropagation();confirmDelete(\'task\',\''+t.id+'\',\''+t.name.replace(/'/g,"\\'")+'\')" title="Delete"><svg><use href="#i-trash"/></svg></div>':'';
+  const aStyle=t.assigned_to==='Omer'?'background:var(--accent-soft);color:var(--accent)':'background:var(--info-soft);color:var(--info)';
+  return '<div class="task-row" draggable="true" data-task-id="'+t.id+'" onclick="openEditTask(\''+t.id+'\')">'+
+    '<div class="task-check'+(done?' done':'')+'" '+checkClick+'>'+(done?'<svg style="width:11px;height:11px;stroke:#fff;stroke-width:3;fill:none"><use href="#i-check"/></svg>':'')+'</div>'+
+    '<div class="task-info"><div class="task-name'+(done?' completed':'')+'">'+t.name+'</div><div class="task-meta">'+(proj?proj.name:'')+'</div></div>'+
+    '<div class="task-assignee-tag" style="'+aStyle+'">'+(t.assigned_to||'?')+'</div>'+
+    '<div class="task-status '+sc+'">'+(t.status||'To Do')+'</div>'+
+    '<div class="task-due'+(over?' overdue':'')+'">'+(t.due_date||'')+'</div>'+
+    delBtn+'</div>';
+}
+let dragTaskId=null;
+function saveTaskOrder(){
+  const order={};
+  document.querySelectorAll('.time-section-body').forEach(zone=>{
+    const sec=zone.dataset.section;
+    const ids=[...zone.querySelectorAll('.task-row')].map(r=>r.dataset.taskId).filter(Boolean);
+    if(ids.length)order[sec]=ids;
+  });
+  localStorage.setItem('taskOrder',JSON.stringify(order));
+}
+function getDropIndex(zone,y){
+  const rows=[...zone.querySelectorAll('.task-row:not(.dragging)')];
+  for(let i=0;i<rows.length;i++){
+    const rect=rows[i].getBoundingClientRect();
+    if(y<rect.top+rect.height/2)return i;
+  }
+  return rows.length;
+}
+function initTaskDrag(){
+  document.querySelectorAll('#time-sections .task-row[draggable]').forEach(el=>{
+    el.addEventListener('dragstart',e=>{
+      dragTaskId=el.dataset.taskId;
+      el.classList.add('dragging');
+      e.dataTransfer.effectAllowed='move';
+    });
+    el.addEventListener('dragend',()=>{
+      el.classList.remove('dragging');
+      document.querySelectorAll('.drag-over').forEach(x=>x.classList.remove('drag-over'));
+      document.querySelectorAll('.drag-indicator').forEach(x=>x.remove());
+    });
+  });
+  document.querySelectorAll('.time-section-body').forEach(zone=>{
+    zone.addEventListener('dragover',e=>{
+      e.preventDefault();e.dataTransfer.dropEffect='move';
+      zone.classList.add('drag-over');
+      // Show drop position indicator
+      zone.querySelectorAll('.drag-indicator').forEach(x=>x.remove());
+      const rows=[...zone.querySelectorAll('.task-row:not(.dragging)')];
+      const idx=getDropIndex(zone,e.clientY);
+      const indicator=document.createElement('div');
+      indicator.className='drag-indicator';
+      indicator.style.cssText='height:2px;background:var(--accent);margin:0 20px;border-radius:2px';
+      if(idx<rows.length)zone.insertBefore(indicator,rows[idx]);
+      else zone.appendChild(indicator);
+    });
+    zone.addEventListener('dragleave',e=>{
+      if(!zone.contains(e.relatedTarget)){zone.classList.remove('drag-over');zone.querySelectorAll('.drag-indicator').forEach(x=>x.remove())}
+    });
+    zone.addEventListener('drop',async e=>{
+      e.preventDefault();zone.classList.remove('drag-over');
+      zone.querySelectorAll('.drag-indicator').forEach(x=>x.remove());
+      if(!dragTaskId){return}
+      const sec=zone.dataset.section;
+      const task=DATA.tasks.find(t=>t.id===dragTaskId);
+      if(!task){dragTaskId=null;return}
+      const curCat=getDateCat(task.due_date);
+      const dropIdx=getDropIndex(zone,e.clientY);
+      if(curCat===sec){
+        // Same section — reorder only (no sheet update needed)
+        const dragEl=zone.querySelector('.task-row[data-task-id="'+dragTaskId+'"]');
+        if(dragEl){
+          const rows=[...zone.querySelectorAll('.task-row:not(.dragging)')];
+          if(dropIdx<rows.length)zone.insertBefore(dragEl,rows[dropIdx]);
+          else zone.appendChild(dragEl);
+          saveTaskOrder();
+        }
+        dragTaskId=null;return;
+      }
+      // Different section — update date
+      if(!accessToken){showToast('Sign in to move tasks','error');dragTaskId=null;return}
+      const newDate=sectionDate(sec);
+      const rowIdx=DATA.tasks.indexOf(task)+2;
+      const ok=await updateCell('Tasks','G'+rowIdx,newDate);
+      if(ok){
+        task.due_date=newDate;
+        showToast('Moved to '+{today:'Today',tomorrow:'Tomorrow',week:'Rest of Week',later:'Later'}[sec],'success');
+        renderAllTasks();
+        // Update saved order with new position
+        const savedOrder=JSON.parse(localStorage.getItem('taskOrder')||'{}');
+        if(!savedOrder[sec])savedOrder[sec]=[];
+        savedOrder[sec].splice(dropIdx,0,dragTaskId);
+        localStorage.setItem('taskOrder',JSON.stringify(savedOrder));
+      }
+      dragTaskId=null;
+    });
+  });
+}
+function openEditTask(taskId){
+  if(!accessToken){showToast('Sign in to edit tasks','error');return}
+  const t=DATA.tasks.find(x=>x.id===taskId);if(!t)return;
+  const po=DATA.projects.map(p=>'<option value="'+p.id+'"'+(p.id===t.project_id?' selected':'')+'>'+p.name+'</option>').join('');
+  const fm=document.getElementById('form-modal');
+  fm.innerHTML='<div class="modal-body"><div class="form-title">Edit Task</div>'+
+    '<div class="form-group"><label class="form-label">Task Name *</label><input class="form-input" id="f-task-name" value="'+t.name.replace(/"/g,'&quot;')+'" placeholder="What needs to be done?"></div>'+
+    '<div class="form-row"><div class="form-group"><label class="form-label">Project *</label><select class="form-select" id="f-task-project"><option value="">Select project</option>'+po+'</select></div>'+
+    '<div class="form-group"><label class="form-label">Assigned To</label><select class="form-select" id="f-task-assignee"><option value="Omer"'+(t.assigned_to==='Omer'?' selected':'')+'>Omer</option><option value="Lotan"'+(t.assigned_to==='Lotan'?' selected':'')+'>Lotan</option></select></div></div>'+
+    '<div class="form-row"><div class="form-group"><label class="form-label">Status</label><select class="form-select" id="f-task-status"><option value="To Do"'+(t.status==='To Do'?' selected':'')+'>To Do</option><option value="In Progress"'+(t.status==='In Progress'?' selected':'')+'>In Progress</option><option value="Review"'+(t.status==='Review'?' selected':'')+'>Review</option><option value="Done"'+(t.status==='Done'?' selected':'')+'>Done</option></select></div>'+
+    '<div class="form-group"><label class="form-label">Due Date</label><input class="form-input" id="f-task-due" type="date" value="'+(t.due_date||'')+'"></div></div>'+
+    '<div class="form-group"><label class="form-label">Description</label><textarea class="form-textarea" id="f-task-desc" placeholder="Optional details...">'+(t.description||'').replace(/</g,'&lt;')+'</textarea></div>'+
+    '<div id="form-error" class="form-error"></div>'+
+    '<div class="form-actions"><button class="btn-cancel" onclick="closeForm()">Cancel</button><button class="btn-submit" id="f-submit" onclick="submitEditTask(\''+t.id+'\')">Save Changes</button></div></div>';
+  document.getElementById('form-overlay').classList.add('open');
+  document.body.style.overflow='hidden';
+}
+async function submitEditTask(taskId){
+  const name=document.getElementById('f-task-name').value.trim();
+  const project=document.getElementById('f-task-project').value;
+  if(!name){showFormError('Task name is required');return}
+  if(!project){showFormError('Please select a project');return}
+  const desc=document.getElementById('f-task-desc').value.trim();
+  const assignee=document.getElementById('f-task-assignee').value;
+  const status=document.getElementById('f-task-status').value;
+  const due=document.getElementById('f-task-due').value;
+  const task=DATA.tasks.find(t=>t.id===taskId);if(!task)return;
+  const row=DATA.tasks.indexOf(task)+2;
+  setSubmitting(true);
+  try{
+    const url='https://sheets.googleapis.com/v4/spreadsheets/'+SHEET_ID+'/values/'+encodeURIComponent('Tasks!B'+row+':G'+row)+'?valueInputOption=USER_ENTERED';
+    const resp=await fetch(url,{method:'PUT',headers:{'Authorization':'Bearer '+accessToken,'Content-Type':'application/json'},body:JSON.stringify({values:[[project,name,desc,assignee,status,due]]})});
+    if(!resp.ok)throw new Error('Update failed');
+    setSubmitting(false);closeForm();showToast('Task updated!','success');await refreshData();
+  }catch(e){setSubmitting(false);showToast('Error: '+e.message,'error')}
 }
 
 function setFilter(k,v){
