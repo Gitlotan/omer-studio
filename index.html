@@ -191,6 +191,21 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text-prim
 .ref-tag{padding:2px 8px;border-radius:12px;font-size:10.5px;background:var(--bg);color:var(--text-muted);border:1px solid var(--card-border)}
 /* Gallery */
 .modal-gallery{position:relative;background:#000}
+/* Image Upload */
+.img-upload-area{border:2px dashed var(--card-border);border-radius:var(--radius-sm);padding:20px;text-align:center;cursor:pointer;transition:all .2s;background:var(--bg);margin-bottom:8px}
+.img-upload-area:hover,.img-upload-area.drag-over{border-color:var(--accent);background:var(--accent-soft)}
+.img-upload-area .ic{color:var(--text-muted);margin-bottom:6px}
+.img-upload-hint{font-size:12px;color:var(--text-muted);line-height:1.5}
+.img-upload-hint strong{color:var(--accent);cursor:pointer}
+.img-preview-grid{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.img-preview-item{position:relative;width:72px;height:72px;border-radius:var(--radius-sm);overflow:hidden;border:1px solid var(--card-border)}
+.img-preview-item img{width:100%;height:100%;object-fit:cover}
+.img-preview-item .img-remove{position:absolute;top:2px;right:2px;width:20px;height:20px;border-radius:50%;background:rgba(0,0,0,.6);color:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:12px;line-height:1;border:none;transition:background .15s}
+.img-preview-item .img-remove:hover{background:var(--danger)}
+.img-preview-item.uploading::after{content:'';position:absolute;inset:0;background:rgba(255,255,255,.7);display:flex;align-items:center;justify-content:center}
+.img-preview-item .upload-spinner{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:18px;height:18px;border:2px solid var(--card-border);border-top-color:var(--accent);border-radius:50%;animation:spin .6s linear infinite;z-index:1}
+.img-url-divider{display:flex;align-items:center;gap:10px;margin:10px 0;font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px}
+.img-url-divider::before,.img-url-divider::after{content:'';flex:1;height:1px;background:var(--card-border)}
 .modal-gallery-img{width:100%;max-height:400px;object-fit:contain;display:none;border-radius:16px 16px 0 0}
 .modal-gallery-img.active{display:block}
 .modal-gallery-nav{position:absolute;top:50%;left:0;right:0;transform:translateY(-50%);display:flex;align-items:center;justify-content:space-between;padding:0 12px;pointer-events:none}
@@ -423,7 +438,8 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text-prim
 const SHEET_ID='1x4muffjvZhrdbvsrBdTgkloo441-y1ThYGsgKKaT3mc';
 const SHEET_GIDS={Projects:997517085,Tasks:1481389517,References:1244683688,Platforms:1804897256,Tools:436378319,Skills:2054960753};
 const OAUTH_CLIENT_ID='98346290791-k6cn2qf20p1enp9mj3j3qoglrchcb9qh.apps.googleusercontent.com';
-const SCOPES='https://www.googleapis.com/auth/spreadsheets https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/userinfo.email';
+const SCOPES='https://www.googleapis.com/auth/spreadsheets https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/drive.file';
+const DRIVE_FOLDER_ID='1_hNiQtFsyqF1StcTls0drbuc1oo2o6C8';
 const ICONS={compass:'#i-compass',store:'#i-store',cpu:'#i-cpu',map:'#i-map',image:'#i-image',zap:'#i-zap',folder:'#i-folder',default:'#i-folder'};
 const COLORS={strategy:'strategy',marketing:'marketing',creative:'creative',finance:'finance',revenue:'marketing',tools:'creative',research:'creative',development:'finance',planning:'strategy'};
 const CAT_COLORS={'Style Reference':'var(--accent)','Packaging':'var(--success)','Technique':'var(--info)','Color Palette':'var(--tag-marketing)','Branding':'var(--warning)'};
@@ -687,11 +703,22 @@ function openAddForm(type){
       '<div class="form-group"><label class="form-label">Category</label><select class="form-select" id="f-ref-cat"><option value="">Select category</option><option>Style Reference</option><option>Packaging</option><option>Technique</option><option>Color Palette</option><option>Branding</option></select></div>'+
       '<div class="form-group"><label class="form-label">Notes</label><textarea class="form-textarea" id="f-ref-notes" placeholder="Why is this inspiring?"></textarea></div>'+
       '<div class="form-group"><label class="form-label">Tags</label><input class="form-input" id="f-ref-tags" placeholder="comma, separated, tags"><div class="form-hint">Separate tags with commas</div></div>'+
-      '<div class="form-group"><label class="form-label">Image URL</label><input class="form-input" id="f-ref-img" placeholder="https://..."></div>'+
+      '<div class="form-group"><label class="form-label">Images</label>'+
+        '<div class="img-upload-area" id="img-upload-area" onclick="document.getElementById(\'img-file-input\').click()">'+
+          '<input type="file" id="img-file-input" multiple accept="image/*" style="display:none" onchange="handleImageFiles(this.files)">'+
+          '<span class="ic"><svg><use href="#i-image"/></svg></span>'+
+          '<div class="img-upload-hint"><strong>Click to upload</strong> or drag images here<br>JPG, PNG, WebP — uploaded to Google Drive</div>'+
+        '</div>'+
+        '<div class="img-preview-grid" id="img-preview-grid"></div>'+
+        '<div class="img-url-divider">or paste URL</div>'+
+        '<input class="form-input" id="f-ref-img" placeholder="https://... (comma-separated for multiple)">'+
+      '</div>'+
       '<div class="form-row"><div class="form-group"><label class="form-label">Link URL</label><input class="form-input" id="f-ref-link" placeholder="https://..."></div>'+
       '<div class="form-group"><label class="form-label">Link Title</label><input class="form-input" id="f-ref-linktitle" placeholder="e.g. Behance"></div></div>'+
       '<div id="form-error" class="form-error"></div>'+
       '<div class="form-actions"><button class="btn-cancel" onclick="closeForm()">Cancel</button><button class="btn-submit" id="f-submit" onclick="submitReference()">Add Reference</button></div></div>';
+    // Init drag-drop on upload area
+    setTimeout(initImageUploadDrag,50);
   }else if(type==='skill'){
     fm.innerHTML='<div class="modal-body"><div class="form-title">Add Skill</div>'+
       '<div class="form-group"><label class="form-label">Skill Name *</label><input class="form-input" id="f-skill-name" placeholder="e.g. Blender, After Effects"></div>'+
@@ -705,12 +732,118 @@ function openAddForm(type){
   document.body.style.overflow='hidden';
   setTimeout(()=>{const fi=fm.querySelector('.form-input');if(fi)fi.focus()},100);
 }
-function closeForm(){document.getElementById('form-overlay').classList.remove('open');document.body.style.overflow='';editingRefId=null}
+function closeForm(){document.getElementById('form-overlay').classList.remove('open');document.body.style.overflow='';editingRefId=null;uploadedImageUrls=[]}
 function showFormError(msg){const el=document.getElementById('form-error');el.textContent=msg;el.style.display='block'}
+
+// IMAGE UPLOAD TO GOOGLE DRIVE
+let uploadedImageUrls=[];
+
+function initImageUploadDrag(){
+  const area=document.getElementById('img-upload-area');
+  if(!area)return;
+  area.addEventListener('dragover',e=>{e.preventDefault();e.stopPropagation();area.classList.add('drag-over')});
+  area.addEventListener('dragleave',e=>{e.preventDefault();e.stopPropagation();area.classList.remove('drag-over')});
+  area.addEventListener('drop',e=>{e.preventDefault();e.stopPropagation();area.classList.remove('drag-over');if(e.dataTransfer.files.length)handleImageFiles(e.dataTransfer.files)});
+}
+
+function handleImageFiles(files){
+  if(!accessToken){showToast('Please sign in to upload images','error');return}
+  Array.from(files).forEach(f=>{
+    if(!f.type.startsWith('image/')){showToast(f.name+' is not an image','error');return}
+    if(f.size>10*1024*1024){showToast(f.name+' is too large (max 10MB)','error');return}
+    uploadImageToDrive(f);
+  });
+}
+
+async function findOrCreateFolder(parentId,folderName){
+  // Search for existing folder
+  const q=encodeURIComponent("'"+parentId+"' in parents and name='"+folderName+"' and mimeType='application/vnd.google-apps.folder' and trashed=false");
+  const searchResp=await fetch('https://www.googleapis.com/drive/v3/files?q='+q+'&fields=files(id,name)',{headers:{'Authorization':'Bearer '+accessToken}});
+  const searchData=await searchResp.json();
+  if(searchData.files&&searchData.files.length>0)return searchData.files[0].id;
+  // Create folder
+  const createResp=await fetch('https://www.googleapis.com/drive/v3/files',{method:'POST',headers:{'Authorization':'Bearer '+accessToken,'Content-Type':'application/json'},
+    body:JSON.stringify({name:folderName,mimeType:'application/vnd.google-apps.folder',parents:[parentId]})});
+  const folder=await createResp.json();
+  return folder.id;
+}
+
+async function uploadImageToDrive(file){
+  // Show preview with spinner
+  const previewId='preview-'+Date.now()+'-'+Math.random().toString(36).substr(2,5);
+  const grid=document.getElementById('img-preview-grid');
+  const reader=new FileReader();
+  reader.onload=e=>{
+    const div=document.createElement('div');
+    div.className='img-preview-item uploading';div.id=previewId;
+    div.innerHTML='<img src="'+e.target.result+'"><div class="upload-spinner"></div>';
+    grid.appendChild(div);
+  };
+  reader.readAsDataURL(file);
+
+  try{
+    // Find or create /refs/ subfolder
+    const refsFolderId=await findOrCreateFolder(DRIVE_FOLDER_ID,'refs');
+    // Upload file
+    const metadata={name:Date.now()+'_'+file.name.replace(/[^a-zA-Z0-9._-]/g,'_'),parents:[refsFolderId]};
+    const form=new FormData();
+    form.append('metadata',new Blob([JSON.stringify(metadata)],{type:'application/json'}));
+    form.append('file',file);
+    const resp=await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id,webContentLink,webViewLink',{
+      method:'POST',headers:{'Authorization':'Bearer '+accessToken},body:form});
+    if(!resp.ok){const err=await resp.json();throw new Error(err.error?.message||'Upload failed')}
+    const data=await resp.json();
+
+    // Make file publicly viewable
+    await fetch('https://www.googleapis.com/drive/v3/files/'+data.id+'/permissions',{method:'POST',headers:{'Authorization':'Bearer '+accessToken,'Content-Type':'application/json'},
+      body:JSON.stringify({role:'reader',type:'anyone'})});
+
+    // Use direct thumbnail URL
+    const imageUrl='https://drive.google.com/thumbnail?id='+data.id+'&sz=w800';
+    uploadedImageUrls.push(imageUrl);
+
+    // Update preview — remove spinner, add remove button
+    const el=document.getElementById(previewId);
+    if(el){el.classList.remove('uploading');el.querySelector('.upload-spinner')?.remove();
+      el.innerHTML+='<button class="img-remove" onclick="removeUploadedImage(\''+previewId+'\',\''+imageUrl+'\')">×</button>'}
+
+    // Merge with existing URL field
+    syncImageUrlField();
+    showToast('Image uploaded!','success');
+  }catch(e){
+    const el=document.getElementById(previewId);if(el)el.remove();
+    showToast('Upload failed: '+e.message,'error');
+  }
+}
+
+function removeUploadedImage(previewId,url){
+  const el=document.getElementById(previewId);if(el)el.remove();
+  uploadedImageUrls=uploadedImageUrls.filter(u=>u!==url);
+  syncImageUrlField();
+}
+
+function syncImageUrlField(){
+  const field=document.getElementById('f-ref-img');if(!field)return;
+  const manualUrls=field.value.split(',').map(u=>u.trim()).filter(u=>u&&!u.includes('drive.google.com/thumbnail'));
+  const allUrls=[...uploadedImageUrls,...manualUrls].filter(Boolean);
+  field.value=allUrls.join(', ');
+}
+
+function removeExistingImage(previewId){
+  const el=document.getElementById(previewId);
+  if(!el)return;
+  const imgSrc=el.querySelector('img')?.src||'';
+  el.remove();
+  // Remove this URL from the image URL field
+  const field=document.getElementById('f-ref-img');if(!field)return;
+  const urls=field.value.split(',').map(u=>u.trim()).filter(u=>u&&u!==imgSrc);
+  field.value=urls.join(', ');
+}
 
 function openEditReference(id){
   const r=DATA.references.find(x=>x.id===id);if(!r)return;
   editingRefId=id;
+  uploadedImageUrls=[];
   openAddForm('reference');
   document.querySelector('#form-modal .form-title').textContent='Edit Reference';
   document.getElementById('f-ref-title').value=r.title||'';
@@ -722,6 +855,15 @@ function openEditReference(id){
   document.getElementById('f-ref-linktitle').value=r.link_titles||'';
   document.getElementById('f-submit').textContent='Save Changes';
   document.getElementById('f-submit').onclick=submitReference;
+  // Show existing images as previews
+  const existingUrls=(r.image_urls||'').split(',').map(u=>u.trim()).filter(Boolean);
+  const grid=document.getElementById('img-preview-grid');
+  if(grid&&existingUrls.length){
+    grid.innerHTML=existingUrls.map((url,i)=>{
+      const pid='existing-'+i;
+      return '<div class="img-preview-item" id="'+pid+'"><img src="'+url+'" onerror="this.parentElement.remove()"><button class="img-remove" onclick="removeExistingImage(\''+pid+'\')">×</button></div>';
+    }).join('');
+  }
 }
 function setSubmitting(on){const b=document.getElementById('f-submit');b.disabled=on;if(on)b.textContent='Saving...'}
 
