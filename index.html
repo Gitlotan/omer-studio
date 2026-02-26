@@ -189,6 +189,18 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text-prim
 .ref-card-meta{font-size:11px;color:var(--text-muted)}
 .ref-tags{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
 .ref-tag{padding:2px 8px;border-radius:12px;font-size:10.5px;background:var(--bg);color:var(--text-muted);border:1px solid var(--card-border)}
+/* Gallery */
+.modal-gallery{position:relative;background:#000}
+.modal-gallery-img{width:100%;max-height:400px;object-fit:contain;display:none;border-radius:16px 16px 0 0}
+.modal-gallery-img.active{display:block}
+.modal-gallery-nav{position:absolute;top:50%;left:0;right:0;transform:translateY(-50%);display:flex;align-items:center;justify-content:space-between;padding:0 12px;pointer-events:none}
+.gallery-prev,.gallery-next{width:36px;height:36px;border-radius:50%;background:rgba(0,0,0,.6);color:#fff;border:none;font-size:22px;cursor:pointer;pointer-events:all;display:flex;align-items:center;justify-content:center;transition:background .15s}
+.gallery-prev:hover,.gallery-next:hover{background:rgba(0,0,0,.85)}
+.gallery-counter{background:rgba(0,0,0,.5);color:#fff;padding:4px 12px;border-radius:20px;font-size:12px;font-weight:500;pointer-events:all}
+.modal-gallery-thumbs{display:flex;gap:6px;padding:10px 12px;background:rgba(0,0,0,.8);overflow-x:auto}
+.gallery-thumb{width:56px;height:42px;object-fit:cover;border-radius:6px;cursor:pointer;opacity:.5;transition:all .15s;border:2px solid transparent;flex-shrink:0}
+.gallery-thumb.active{opacity:1;border-color:var(--accent)}
+.gallery-thumb:hover{opacity:.85}
 .modal-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.5);z-index:1000;display:none;align-items:center;justify-content:center;padding:40px;backdrop-filter:blur(4px)}
 .modal-overlay.open{display:flex}
 .modal{background:var(--card-bg);border-radius:16px;max-width:680px;width:100%;max-height:85vh;overflow-y:auto;box-shadow:var(--shadow-lg);animation:modalIn .25s ease}
@@ -251,6 +263,10 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text-prim
 .ref-card:hover .ref-delete{opacity:1}
 .ref-delete:hover{background:var(--danger)}
 .ref-delete svg{width:14px;height:14px;stroke:#fff}
+.ref-edit{position:absolute;top:8px;right:44px;width:28px;height:28px;border-radius:50%;background:rgba(0,0,0,.5);color:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer;opacity:0;transition:all .15s;z-index:2}
+.ref-card:hover .ref-edit{opacity:1}
+.ref-edit:hover{background:var(--accent)}
+.ref-edit svg{width:14px;height:14px;stroke:#fff;fill:none}
 .ref-card{position:relative}
 .skill-delete{width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--text-muted);transition:all .15s;flex-shrink:0;opacity:0}
 .skill-card:hover .skill-delete{opacity:1}
@@ -302,6 +318,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text-prim
   <symbol id="i-log-in" viewBox="0 0 24 24"><path d="M15 3h4a2 2 0 012 2v14a2 2 0 01-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></symbol>
   <symbol id="i-log-out" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></symbol>
   <symbol id="i-trash" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></symbol>
+  <symbol id="i-edit" viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></symbol>
 </svg>
 
 <nav class="sidebar">
@@ -417,22 +434,87 @@ let FILTERS={status:'all',assignee:'all'};
 let REF_FILTER='all';
 let currentProjectId=null;
 
-// AUTH
+// AUTH — uses cookies (localStorage/sessionStorage blocked in some Chrome configs)
 let accessToken=null;let tokenClient=null;let currentUser=null;
+
+function setCookie(name,val,maxAgeSec){document.cookie=name+'='+encodeURIComponent(val)+';path=/;max-age='+maxAgeSec+';SameSite=Lax'}
+function getCookie(name){const m=document.cookie.match('(^|;)\\s*'+name+'=([^;]*)');return m?decodeURIComponent(m[2]):null}
+function deleteCookie(name){document.cookie=name+'=;path=/;max-age=0'}
+
+function saveSession(){
+  try{
+    setCookie('omer_token',accessToken,3500);
+    setCookie('omer_user',JSON.stringify(currentUser),86400*30);
+  }catch(e){console.warn('saveSession error:',e)}
+}
+function clearSession(){
+  deleteCookie('omer_token');deleteCookie('omer_user');
+}
+function restoreSession(){
+  try{
+    const tok=getCookie('omer_token');
+    const usr=getCookie('omer_user');
+    if(tok&&usr){
+      accessToken=tok;currentUser=JSON.parse(usr);updateAuthUI();
+      showToast('Welcome back, '+currentUser.name,'success');return true;
+    }
+  }catch(e){}
+  return false;
+}
 
 function initAuth(){
   tokenClient=google.accounts.oauth2.initTokenClient({
     client_id:OAUTH_CLIENT_ID,scope:SCOPES,
     callback:(resp)=>{
-      if(resp.error)return;
+      if(resp.error){console.warn('Auth error:',resp.error);return}
       accessToken=resp.access_token;
       fetch('https://www.googleapis.com/oauth2/v3/userinfo',{headers:{'Authorization':'Bearer '+accessToken}})
-        .then(r=>r.json()).then(info=>{currentUser={name:info.name||info.email,email:info.email,picture:info.picture};updateAuthUI();showToast('Signed in as '+currentUser.name,'success')}).catch(()=>updateAuthUI());
+        .then(r=>r.json()).then(info=>{
+          currentUser={name:info.name||info.email,email:info.email,picture:info.picture};
+          saveSession();updateAuthUI();showToast('Signed in as '+currentUser.name,'success');
+        }).catch(()=>updateAuthUI());
     }
   });
+  // Restore token from cookie (survives refresh)
+  if(restoreSession())return;
+  // Try Google One Tap for returning users (cross-session, token expired)
+  tryOneTap();
 }
+
+function tryOneTap(){
+  try{
+    const usr=getCookie('omer_user');
+    if(!usr)return;
+    const hint=JSON.parse(usr).email;
+    google.accounts.id.initialize({
+      client_id:OAUTH_CLIENT_ID,
+      callback:handleOneTapResponse,
+      auto_select:true,
+      login_hint:hint
+    });
+    google.accounts.id.prompt();
+  }catch(e){console.warn('One Tap init failed:',e)}
+}
+
+function handleOneTapResponse(response){
+  try{
+    const payload=JSON.parse(atob(response.credential.split('.')[1]));
+    currentUser={name:payload.name||payload.email,email:payload.email,picture:payload.picture||''};
+    setCookie('omer_user',JSON.stringify(currentUser),86400*30);
+    updateAuthUI();
+    // Silently request access token for Sheets API
+    if(tokenClient)tokenClient.requestAccessToken({prompt:'',login_hint:currentUser.email});
+  }catch(e){console.warn('One Tap credential error:',e)}
+}
+
 function handleSignIn(){if(!tokenClient){showToast('Google auth loading...','error');return}tokenClient.requestAccessToken({prompt:'consent'})}
-function handleSignOut(){if(accessToken)google.accounts.oauth2.revoke(accessToken);accessToken=null;currentUser=null;updateAuthUI();showToast('Signed out','')}
+function handleSignOut(){
+  if(accessToken)google.accounts.oauth2.revoke(accessToken);
+  accessToken=null;currentUser=null;
+  clearSession();
+  try{google.accounts.id.disableAutoSelect()}catch(e){}
+  updateAuthUI();showToast('Signed out','');
+}
 
 function updateAuthUI(){
   const aa=document.getElementById('auth-area');
@@ -503,6 +585,18 @@ async function updateCell(sheetName,range,value){
   }catch(e){showToast('Error: '+e.message,'error');return false}
 }
 
+async function updateRow(sheetName,rowIndex,values){
+  if(!accessToken){showToast('Please sign in first','error');return false}
+  const endCol=String.fromCharCode(64+values.length);
+  const range=sheetName+'!A'+rowIndex+':'+endCol+rowIndex;
+  const url='https://sheets.googleapis.com/v4/spreadsheets/'+SHEET_ID+'/values/'+encodeURIComponent(range)+'?valueInputOption=USER_ENTERED';
+  try{
+    const resp=await fetch(url,{method:'PUT',headers:{'Authorization':'Bearer '+accessToken,'Content-Type':'application/json'},body:JSON.stringify({values:[values]})});
+    if(!resp.ok){if(resp.status===401){accessToken=null;updateAuthUI();showToast('Session expired — sign in again','error');return false}throw new Error('Update failed')}
+    return true;
+  }catch(e){showToast('Error: '+e.message,'error');return false}
+}
+
 async function refreshData(){
   await loadAllData();
   const active=document.querySelector('.screen.active');
@@ -544,6 +638,7 @@ async function deleteSheetRow(sheetGid,rowIndex){
 }
 
 let pendingDelete=null;
+let editingRefId=null;
 function confirmDelete(type,id,name){
   if(!accessToken){showToast('Sign in to delete','error');return}
   pendingDelete={type,id};
@@ -610,8 +705,24 @@ function openAddForm(type){
   document.body.style.overflow='hidden';
   setTimeout(()=>{const fi=fm.querySelector('.form-input');if(fi)fi.focus()},100);
 }
-function closeForm(){document.getElementById('form-overlay').classList.remove('open');document.body.style.overflow=''}
+function closeForm(){document.getElementById('form-overlay').classList.remove('open');document.body.style.overflow='';editingRefId=null}
 function showFormError(msg){const el=document.getElementById('form-error');el.textContent=msg;el.style.display='block'}
+
+function openEditReference(id){
+  const r=DATA.references.find(x=>x.id===id);if(!r)return;
+  editingRefId=id;
+  openAddForm('reference');
+  document.querySelector('#form-modal .form-title').textContent='Edit Reference';
+  document.getElementById('f-ref-title').value=r.title||'';
+  document.getElementById('f-ref-cat').value=r.category||'';
+  document.getElementById('f-ref-notes').value=r.notes||'';
+  document.getElementById('f-ref-tags').value=r.tags||'';
+  document.getElementById('f-ref-img').value=r.image_urls||'';
+  document.getElementById('f-ref-link').value=r.link_urls||'';
+  document.getElementById('f-ref-linktitle').value=r.link_titles||'';
+  document.getElementById('f-submit').textContent='Save Changes';
+  document.getElementById('f-submit').onclick=submitReference;
+}
 function setSubmitting(on){const b=document.getElementById('f-submit');b.disabled=on;if(on)b.textContent='Saving...'}
 
 async function submitTask(){
@@ -634,19 +745,29 @@ async function submitTask(){
 async function submitReference(){
   const title=document.getElementById('f-ref-title').value.trim();
   if(!title){showFormError('Title is required');return}
-  const id='R'+(DATA.references.length+1).toString().padStart(3,'0');
   const cat=document.getElementById('f-ref-cat').value;
   const notes=document.getElementById('f-ref-notes').value.trim();
   const tags=document.getElementById('f-ref-tags').value.trim();
   const img=document.getElementById('f-ref-img').value.trim();
   const link=document.getElementById('f-ref-link').value.trim();
   const linkTitle=document.getElementById('f-ref-linktitle').value.trim();
-  const addedBy=currentUser?currentUser.name:'Unknown';
-  const today=new Date().toISOString().split('T')[0];
   setSubmitting(true);
-  const ok=await appendToSheet('References',[id,title,cat,notes,tags,img,link,linkTitle,addedBy,today]);
-  setSubmitting(false);
-  if(ok){closeForm();showToast('Reference added!','success');await refreshData()}
+  let ok;
+  if(editingRefId){
+    const ref=DATA.references.find(x=>x.id===editingRefId);
+    if(!ref){setSubmitting(false);return}
+    const rowIndex=DATA.references.indexOf(ref)+2;
+    ok=await updateRow('References',rowIndex,[ref.id,title,cat,notes,tags,img,link,linkTitle,ref.added_by||'',ref.created_date||'']);
+    setSubmitting(false);
+    if(ok){closeForm();showToast('Reference updated!','success');await refreshData()}
+  }else{
+    const id='R'+(DATA.references.length+1).toString().padStart(3,'0');
+    const addedBy=currentUser?currentUser.name:'Unknown';
+    const today=new Date().toISOString().split('T')[0];
+    ok=await appendToSheet('References',[id,title,cat,notes,tags,img,link,linkTitle,addedBy,today]);
+    setSubmitting(false);
+    if(ok){closeForm();showToast('Reference added!','success');await refreshData()}
+  }
 }
 
 async function submitSkill(){
@@ -749,8 +870,8 @@ function renderAllTasks(){
   if(FILTERS.assignee!=='all')f=f.filter(t=>t.assigned_to===FILTERS.assignee);
   const secs={today:[],tomorrow:[],week:[],later:[]};
   f.forEach(t=>secs[getDateCat(t.due_date)].push(t));
-  // Apply saved order from localStorage
-  const savedOrder=JSON.parse(localStorage.getItem('taskOrder')||'{}');
+  // Apply saved order from cookies
+  const savedOrder=JSON.parse(getCookie('omer_task_order')||'{}');
   ['today','tomorrow','week','later'].forEach(k=>{
     if(savedOrder[k]){
       const order=savedOrder[k];
@@ -789,7 +910,7 @@ function saveTaskOrder(){
     const ids=[...zone.querySelectorAll('.task-row')].map(r=>r.dataset.taskId).filter(Boolean);
     if(ids.length)order[sec]=ids;
   });
-  localStorage.setItem('taskOrder',JSON.stringify(order));
+  setCookie('omer_task_order',JSON.stringify(order),86400*30);
 }
 function getDropIndex(zone,y){
   const rows=[...zone.querySelectorAll('.task-row:not(.dragging)')];
@@ -832,17 +953,27 @@ function initTaskDrag(){
     zone.addEventListener('drop',async e=>{
       e.preventDefault();zone.classList.remove('drag-over');
       zone.querySelectorAll('.drag-indicator').forEach(x=>x.remove());
-      if(!dragTaskId){return}
+      console.log('[DRAG] drop fired, dragTaskId=',dragTaskId);
+      if(!dragTaskId){console.log('[DRAG] no dragTaskId, abort');return}
       const sec=zone.dataset.section;
       const task=DATA.tasks.find(t=>t.id===dragTaskId);
-      if(!task){dragTaskId=null;return}
+      console.log('[DRAG] target section=',sec,'task found=',!!task,'task.id types:',typeof dragTaskId,DATA.tasks.length?typeof DATA.tasks[0].id:'no tasks');
+      if(!task){
+        // Try numeric match if string mismatch
+        const taskAlt=DATA.tasks.find(t=>String(t.id)===String(dragTaskId));
+        console.log('[DRAG] exact match failed, loose match=',!!taskAlt,'all ids=',DATA.tasks.map(t=>t.id));
+        dragTaskId=null;return;
+      }
       const curCat=getDateCat(task.due_date);
       const dropIdx=getDropIndex(zone,e.clientY);
+      console.log('[DRAG] curCat=',curCat,'sec=',sec,'dropIdx=',dropIdx,'due_date=',task.due_date);
       if(curCat===sec){
-        // Same section — reorder only (no sheet update needed)
+        // Same section — reorder only
         const dragEl=zone.querySelector('.task-row[data-task-id="'+dragTaskId+'"]');
+        console.log('[DRAG] same section reorder, dragEl found=',!!dragEl);
         if(dragEl){
           const rows=[...zone.querySelectorAll('.task-row:not(.dragging)')];
+          console.log('[DRAG] rows count=',rows.length,'dropIdx=',dropIdx);
           if(dropIdx<rows.length)zone.insertBefore(dragEl,rows[dropIdx]);
           else zone.appendChild(dragEl);
           saveTaskOrder();
@@ -853,16 +984,17 @@ function initTaskDrag(){
       if(!accessToken){showToast('Sign in to move tasks','error');dragTaskId=null;return}
       const newDate=sectionDate(sec);
       const rowIdx=DATA.tasks.indexOf(task)+2;
+      console.log('[DRAG] cross-section move, newDate=',newDate,'rowIdx=',rowIdx);
       const ok=await updateCell('Tasks','G'+rowIdx,newDate);
+      console.log('[DRAG] updateCell result=',ok);
       if(ok){
         task.due_date=newDate;
         showToast('Moved to '+{today:'Today',tomorrow:'Tomorrow',week:'Rest of Week',later:'Later'}[sec],'success');
         renderAllTasks();
-        // Update saved order with new position
-        const savedOrder=JSON.parse(localStorage.getItem('taskOrder')||'{}');
+        const savedOrder=JSON.parse(getCookie('omer_task_order')||'{}');
         if(!savedOrder[sec])savedOrder[sec]=[];
         savedOrder[sec].splice(dropIdx,0,dragTaskId);
-        localStorage.setItem('taskOrder',JSON.stringify(savedOrder));
+        setCookie('omer_task_order',JSON.stringify(savedOrder),86400*30);
       }
       dragTaskId=null;
     });
@@ -929,7 +1061,8 @@ function renderReferences(){
     const catBg=CAT_BGS[r.category]||'var(--accent-soft)';
     const tags=(r.tags||'').split(',').filter(Boolean).slice(0,3);
     return'<div class="ref-card" onclick="openRefModal(\''+r.id+'\')">'+
-      (accessToken?'<div class="ref-delete" onclick="event.stopPropagation();confirmDelete(\'reference\',\''+r.id+'\',\''+r.title.replace(/'/g,'\\\'')+'\')" title="Delete reference"><svg><use href="#i-trash"/></svg></div>':'')+
+      (accessToken?'<div class="ref-edit" onclick="event.stopPropagation();openEditReference(\''+r.id+'\')" title="Edit reference"><svg><use href="#i-edit"/></svg></div>'+
+      '<div class="ref-delete" onclick="event.stopPropagation();confirmDelete(\'reference\',\''+r.id+'\',\''+r.title.replace(/'/g,'\\\'')+'\')" title="Delete reference"><svg><use href="#i-trash"/></svg></div>':'')+
       (img?'<img class="ref-card-img" src="'+img+'" alt="'+r.title+'" onerror="this.outerHTML=\'<div class=ref-card-img-placeholder><span class=ic><svg><use href=#i-image/></svg></span></div>\'">':'<div class="ref-card-img-placeholder"><span class="ic"><svg><use href="#i-image"/></svg></span></div>')+
       '<div class="ref-card-body"><h3>'+r.title+'</h3><p>'+(r.notes||'')+'</p><div class="ref-card-footer"><span class="ref-card-cat" style="background:'+catBg+';color:'+catColor+'">'+(r.category||'Uncategorized')+'</span><span class="ref-card-meta">'+(r.added_by||'')+'</span></div>'+
       (tags.length?'<div class="ref-tags">'+tags.map(t=>'<span class="ref-tag">'+t.trim()+'</span>').join('')+'</div>':'')+'</div></div>'
@@ -939,15 +1072,26 @@ function setRefFilter(c){REF_FILTER=c;renderReferences()}
 
 function openRefModal(id){
   const r=DATA.references.find(x=>x.id===id);if(!r)return;
-  const img=r.image_urls?r.image_urls.split(',')[0].trim():'';
+  const allImgs=(r.image_urls||'').split(',').map(u=>u.trim()).filter(Boolean);
   const tags=(r.tags||'').split(',').filter(Boolean);
   const links=(r.link_urls||'').split(',').filter(Boolean);
   const linkTitles=(r.link_titles||'').split(',');
   const catColor=CAT_COLORS[r.category]||'var(--accent)';
   const catBg=CAT_BGS[r.category]||'var(--accent-soft)';
+  let imgHtml='';
+  if(allImgs.length>1){
+    imgHtml='<div class="modal-gallery">'+allImgs.map((img,i)=>
+      '<img class="modal-gallery-img'+(i===0?' active':'')+'" src="'+img+'" alt="'+r.title+' ('+(i+1)+')" onerror="this.style.display=\'none\'">'
+    ).join('')+'<div class="modal-gallery-nav"><button class="gallery-prev" onclick="galleryNav(-1)">‹</button><span class="gallery-counter">1 / '+allImgs.length+'</span><button class="gallery-next" onclick="galleryNav(1)">›</button></div><div class="modal-gallery-thumbs">'+allImgs.map((img,i)=>
+      '<img class="gallery-thumb'+(i===0?' active':'')+'" src="'+img+'" onclick="galleryGo('+i+')" onerror="this.style.display=\'none\'">'
+    ).join('')+'</div></div>';
+  }else if(allImgs.length===1){
+    imgHtml='<img class="modal-img" src="'+allImgs[0]+'" alt="'+r.title+'" onerror="this.outerHTML=\'<div class=modal-img-placeholder><span class=ic style=color:var(--text-muted)><svg style=width:32px;height:32px><use href=#i-image/></svg></span></div>\'">';
+  }else{
+    imgHtml='<div class="modal-img-placeholder"><span class="ic" style="color:var(--text-muted)"><svg style="width:32px;height:32px"><use href="#i-image"/></svg></span></div>';
+  }
   document.getElementById('modal').innerHTML=
-    '<button class="modal-close" onclick="closeModal()">×</button>'+
-    (img?'<img class="modal-img" src="'+img+'" alt="'+r.title+'" onerror="this.outerHTML=\'<div class=modal-img-placeholder><span class=ic style=color:var(--text-muted)><svg style=width:32px;height:32px><use href=#i-image/></svg></span></div>\'">':'<div class="modal-img-placeholder"><span class="ic" style="color:var(--text-muted)"><svg style="width:32px;height:32px"><use href="#i-image"/></svg></span></div>')+
+    '<button class="modal-close" onclick="closeModal()">×</button>'+imgHtml+
     '<div class="modal-body"><span class="modal-cat" style="background:'+catBg+';color:'+catColor+'">'+(r.category||'Uncategorized')+'</span><h2>'+r.title+'</h2><p class="modal-notes">'+(r.notes||'No notes added yet.')+'</p>'+
     (tags.length?'<div class="modal-section"><div class="modal-section-label">Tags</div><div class="modal-tags">'+tags.map(t=>'<span class="modal-tag">'+t.trim()+'</span>').join('')+'</div></div>':'')+
     (links.length?'<div class="modal-section"><div class="modal-section-label">Links</div><div>'+links.map((l,i)=>'<a class="modal-link" href="'+l.trim()+'" target="_blank"><span class="ic ic-sm"><svg><use href="#i-external"/></svg></span>'+(linkTitles[i]?linkTitles[i].trim():'Visit')+'</a>').join('')+'</div></div>':'')+
@@ -956,6 +1100,20 @@ function openRefModal(id){
   document.body.style.overflow='hidden';
 }
 function closeModal(){document.getElementById('modal-overlay').classList.remove('open');if(!document.getElementById('form-overlay').classList.contains('open'))document.body.style.overflow=''}
+
+// GALLERY NAV
+let galleryIdx=0;
+function galleryGo(i){
+  const imgs=document.querySelectorAll('.modal-gallery-img');
+  const thumbs=document.querySelectorAll('.gallery-thumb');
+  if(!imgs.length)return;
+  galleryIdx=Math.max(0,Math.min(i,imgs.length-1));
+  imgs.forEach((img,j)=>{img.classList.toggle('active',j===galleryIdx)});
+  thumbs.forEach((th,j)=>{th.classList.toggle('active',j===galleryIdx)});
+  const counter=document.querySelector('.gallery-counter');
+  if(counter)counter.textContent=(galleryIdx+1)+' / '+imgs.length;
+}
+function galleryNav(dir){galleryGo(galleryIdx+dir)}
 
 // SKILLS MATRIX
 const LEVEL_LABELS={1:'Beginner',2:'Learning',3:'Intermediate',4:'Advanced',5:'Expert'};
