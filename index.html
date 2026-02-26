@@ -213,14 +213,18 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text-prim
 .img-note-badge{position:absolute;bottom:12px;right:12px;display:flex;align-items:center;gap:6px;padding:6px 12px;border-radius:20px;background:rgba(0,0,0,.7);color:#fff;font-size:12px;cursor:pointer;transition:background .15s;backdrop-filter:blur(4px)}
 .img-note-badge:hover{background:rgba(0,0,0,.85)}
 .img-note-badge svg{width:14px;height:14px;stroke:#fff;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
-.img-note-display{background:rgba(0,0,0,.75);color:#fff;padding:12px 16px;font-size:13px;line-height:1.6;backdrop-filter:blur(4px);display:none}
-.img-note-display.visible{display:block}
-.img-note-edit-area{background:rgba(0,0,0,.75);padding:10px 14px;display:none;gap:8px;align-items:flex-end;backdrop-filter:blur(4px)}
-.img-note-edit-area.visible{display:flex}
-.img-note-edit-area textarea{flex:1;padding:8px 10px;border:1px solid rgba(255,255,255,.2);border-radius:var(--radius-sm);background:rgba(255,255,255,.1);color:#fff;font-size:13px;font-family:'DM Sans',sans-serif;resize:none;outline:none;min-height:36px}
-.img-note-edit-area textarea::placeholder{color:rgba(255,255,255,.4)}
-.img-note-edit-area button{padding:6px 14px;border-radius:var(--radius-sm);border:none;background:var(--accent);color:#fff;font-size:12px;font-weight:500;cursor:pointer;font-family:'DM Sans',sans-serif;white-space:nowrap}
-.img-note-edit-area button:hover{background:#B8875E}
+.img-note-panel{background:rgba(0,0,0,.85);backdrop-filter:blur(6px);padding:0}
+.img-note-panel-inner{padding:12px 16px}
+.img-note-panel textarea{width:100%;padding:10px 12px;border:1px solid rgba(255,255,255,.2);border-radius:var(--radius-sm);background:rgba(255,255,255,.1);color:#fff;font-size:13px;font-family:'DM Sans',sans-serif;resize:vertical;outline:none;min-height:60px;margin-bottom:8px}
+.img-note-panel textarea::placeholder{color:rgba(255,255,255,.4)}
+.img-note-panel textarea:focus{border-color:var(--accent)}
+.img-note-btns{display:flex;gap:8px;justify-content:flex-end}
+.img-note-btns button{padding:6px 16px;border-radius:var(--radius-sm);border:none;font-size:12px;font-weight:500;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .15s}
+.img-note-btns button[data-action="save-note"]{background:var(--accent);color:#fff}
+.img-note-btns button[data-action="save-note"]:hover{background:#B8875E}
+.img-note-btns button[data-action="cancel-note"]{background:rgba(255,255,255,.15);color:#fff}
+.img-note-btns button[data-action="cancel-note"]:hover{background:rgba(255,255,255,.25)}
+.img-note-text{color:#fff;font-size:13px;line-height:1.6}
 /* Image note in upload preview */
 .img-preview-note{position:absolute;bottom:2px;left:2px;width:16px;height:16px;border-radius:50%;background:var(--accent);display:flex;align-items:center;justify-content:center;cursor:pointer}
 .img-preview-note svg{width:10px;height:10px;stroke:#fff;fill:none;stroke-width:2}
@@ -467,6 +471,7 @@ let DATA={projects:[],tasks:[],references:[],platforms:[],tools:[],skills:[]};
 let FILTERS={status:'all',assignee:'all'};
 let REF_FILTER='all';
 let currentProjectId=null;
+let currentModalRefId=null;
 
 // AUTH — uses cookies (localStorage/sessionStorage blocked in some Chrome configs)
 let accessToken=null;let tokenClient=null;let currentUser=null;
@@ -1257,6 +1262,7 @@ function setRefFilter(c){REF_FILTER=c;renderReferences()}
 
 function openRefModal(id){
   const r=DATA.references.find(x=>x.id===id);if(!r)return;
+  currentModalRefId=id;
   const allImgs=(r.image_urls||'').split(',').map(u=>u.trim()).filter(Boolean);
   const imgNotes=parseImageNotes(r.image_notes);
   const tags=(r.tags||'').split(',').filter(Boolean);
@@ -1265,41 +1271,33 @@ function openRefModal(id){
   const catColor=CAT_COLORS[r.category]||'var(--accent)';
   const catBg=CAT_BGS[r.category]||'var(--accent-soft)';
   let imgHtml='';
-  if(allImgs.length>1){
+  const noteIcon='<svg viewBox="0 0 24 24" style="pointer-events:none"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>';
+  if(allImgs.length>=1){
+    const multi=allImgs.length>1;
     imgHtml='<div class="modal-gallery" data-ref-id="'+r.id+'">'+allImgs.map((img,i)=>{
       const note=imgNotes[i]||'';
       return '<div class="modal-gallery-img-wrap'+(i===0?' active':'')+'" data-img-idx="'+i+'">'+
-        '<img src="'+img+'" alt="'+r.title+' ('+(i+1)+')" onerror="this.style.display=\'none\'">'+
-        '<div class="img-note-badge" onclick="event.stopPropagation();toggleImageNote('+i+')" title="'+(note?'View note':'Add note')+'">'+
-          '<svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>'+
-          (note?'<span>Note</span>':'')+
+        '<img src="'+img+'" alt="'+r.title+'" style="width:100%;max-height:400px;object-fit:contain;display:block" onerror="this.style.display=\'none\'">'+
+        '<div class="img-note-badge" data-action="toggle-note" data-idx="'+i+'">'+noteIcon+(note?' <span style="pointer-events:none">Note</span>':'')+'</div>'+
+        '<div class="img-note-panel" id="note-panel-'+i+'" style="display:none">'+
+          '<div class="img-note-panel-inner">'+
+            (note&&!accessToken?'<div class="img-note-text">'+note+'</div>':'')+
+            (accessToken?'<textarea id="note-textarea-'+i+'" placeholder="Add a note about this image...">'+(note||'')+'</textarea>'+
+            '<div class="img-note-btns"><button data-action="save-note" data-idx="'+i+'">Save</button><button data-action="cancel-note" data-idx="'+i+'">Cancel</button></div>':'')+
+          '</div>'+
         '</div>'+
-        '<div class="img-note-display" id="img-note-display-'+i+'">'+(note||'')+'</div>'+
-        (accessToken?'<div class="img-note-edit-area" id="img-note-edit-'+i+'">'+
-          '<textarea placeholder="Add a note to this image..." id="img-note-text-'+i+'">'+(note||'')+'</textarea>'+
-          '<button onclick="saveImageNote(\''+r.id+'\','+i+')">Save</button></div>':'')+
       '</div>';
-    }).join('')+'<div class="modal-gallery-nav"><button class="gallery-prev" onclick="galleryNav(-1)">‹</button><span class="gallery-counter">1 / '+allImgs.length+'</span><button class="gallery-next" onclick="galleryNav(1)">›</button></div><div class="modal-gallery-thumbs">'+allImgs.map((img,i)=>
-      '<img class="gallery-thumb'+(i===0?' active':'')+'" src="'+img+'" onclick="galleryGo('+i+')" onerror="this.style.display=\'none\'">'
-    ).join('')+'</div></div>';
-  }else if(allImgs.length===1){
-    const note=imgNotes[0]||'';
-    imgHtml='<div class="modal-gallery" data-ref-id="'+r.id+'" style="position:relative">'+
-      '<div class="modal-gallery-img-wrap active" data-img-idx="0">'+
-        '<img class="modal-img" src="'+allImgs[0]+'" alt="'+r.title+'" onerror="this.outerHTML=\'<div class=modal-img-placeholder><span class=ic style=color:var(--text-muted)><svg style=width:32px;height:32px><use href=#i-image/></svg></span></div>\'">'+
-        '<div class="img-note-badge" onclick="event.stopPropagation();toggleImageNote(0)" title="'+(note?'View note':'Add note')+'">'+
-          '<svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>'+
-          (note?'<span>Note</span>':'')+
-        '</div>'+
-        '<div class="img-note-display" id="img-note-display-0">'+(note||'')+'</div>'+
-        (accessToken?'<div class="img-note-edit-area" id="img-note-edit-0">'+
-          '<textarea placeholder="Add a note to this image..." id="img-note-text-0">'+(note||'')+'</textarea>'+
-          '<button onclick="saveImageNote(\''+r.id+'\',0)">Save</button></div>':'')+
-      '</div></div>';
+    }).join('')+
+    (multi?'<div class="modal-gallery-nav"><button data-action="gallery-prev">‹</button><span class="gallery-counter">1 / '+allImgs.length+'</span><button data-action="gallery-next">›</button></div>'+
+    '<div class="modal-gallery-thumbs">'+allImgs.map((img,i)=>
+      '<img class="gallery-thumb'+(i===0?' active':'')+'" src="'+img+'" data-action="gallery-go" data-idx="'+i+'" onerror="this.style.display=\'none\'">'
+    ).join('')+'</div>':'')+
+    '</div>';
   }else{
     imgHtml='<div class="modal-img-placeholder"><span class="ic" style="color:var(--text-muted)"><svg style="width:32px;height:32px"><use href="#i-image"/></svg></span></div>';
   }
-  document.getElementById('modal').innerHTML=
+  const modal=document.getElementById('modal');
+  modal.innerHTML=
     '<button class="modal-close" onclick="closeModal()">×</button>'+imgHtml+
     '<div class="modal-body"><span class="modal-cat" style="background:'+catBg+';color:'+catColor+'">'+(r.category||'Uncategorized')+'</span><h2>'+r.title+'</h2><p class="modal-notes">'+(r.notes||'No notes added yet.')+'</p>'+
     (tags.length?'<div class="modal-section"><div class="modal-section-label">Tags</div><div class="modal-tags">'+tags.map(t=>'<span class="modal-tag">'+t.trim()+'</span>').join('')+'</div></div>':'')+
@@ -1329,59 +1327,59 @@ function parseImageNotes(str){
   if(!str)return {};
   try{return JSON.parse(str)}catch(e){return {}}
 }
-function toggleImageNote(idx){
-  console.log('toggleImageNote called, idx=',idx,'accessToken=',!!accessToken);
-  const display=document.getElementById('img-note-display-'+idx);
-  const edit=document.getElementById('img-note-edit-'+idx);
-  console.log('display=',display,'edit=',edit);
-  // Hide all first
-  document.querySelectorAll('.img-note-edit-area,.img-note-display').forEach(el=>{el.classList.remove('visible');el.style.display=''});
-  if(edit&&accessToken){
-    const isVis=edit.style.display==='flex';
-    // Toggle with direct style as fallback
-    if(!isVis){
-      edit.classList.add('visible');
-      edit.style.display='flex';
-      edit.querySelector('textarea')?.focus();
-      console.log('showing edit area');
-    }else{
-      edit.style.display='';
-      console.log('hiding edit area');
-    }
-  }else if(display&&display.textContent.trim()){
-    display.classList.add('visible');
-    display.style.display='block';
+
+// Event delegation for modal actions (notes, gallery)
+document.getElementById('modal').addEventListener('click',function(e){
+  const el=e.target.closest('[data-action]');
+  if(!el)return;
+  const action=el.dataset.action;
+  const idx=parseInt(el.dataset.idx||'0');
+  e.stopPropagation();
+
+  if(action==='toggle-note'){
+    const panel=document.getElementById('note-panel-'+idx);
+    if(!panel)return;
+    // Close all other panels
+    document.querySelectorAll('.img-note-panel').forEach(p=>{if(p!==panel)p.style.display='none'});
+    panel.style.display=panel.style.display==='none'?'block':'none';
+    const ta=panel.querySelector('textarea');
+    if(ta)ta.focus();
   }
-}
-async function saveImageNote(refId,imgIdx){
-  const textarea=document.getElementById('img-note-text-'+imgIdx);
-  if(!textarea)return;
-  const noteText=textarea.value.trim();
+  else if(action==='save-note'){
+    const ta=document.getElementById('note-textarea-'+idx);
+    if(!ta||!currentModalRefId)return;
+    saveImageNote(currentModalRefId,idx,ta.value.trim());
+  }
+  else if(action==='cancel-note'){
+    const panel=document.getElementById('note-panel-'+idx);
+    if(panel)panel.style.display='none';
+  }
+  else if(action==='gallery-prev'){galleryNav(-1)}
+  else if(action==='gallery-next'){galleryNav(1)}
+  else if(action==='gallery-go'){galleryGo(idx)}
+});
+
+async function saveImageNote(refId,imgIdx,noteText){
   const ref=DATA.references.find(r=>r.id===refId);
   if(!ref)return;
-  // Parse existing notes, update this one
   const notes=parseImageNotes(ref.image_notes);
   if(noteText)notes[imgIdx]=noteText;else delete notes[imgIdx];
   const notesJson=JSON.stringify(notes);
-  // Save to sheet — image_notes is column K (11th column)
   const rowIndex=DATA.references.indexOf(ref)+2;
   const ok=await updateCell('References','K'+rowIndex,notesJson);
   if(ok){
     ref.image_notes=notesJson;
     showToast('Note saved!','success');
-    // Update display
-    const display=document.getElementById('img-note-display-'+imgIdx);
-    if(display)display.textContent=noteText;
-    const badge=document.querySelector('.modal-gallery-img-wrap[data-img-idx="'+imgIdx+'"] .img-note-badge span');
-    if(badge&&noteText)badge.textContent='Note';
-    else if(!noteText&&badge)badge.remove();
-    // Hide edit area
-    const editEl=document.getElementById('img-note-edit-'+imgIdx);
-    if(editEl){editEl.classList.remove('visible');editEl.style.display=''}
-    if(noteText){
-      const dispEl=document.getElementById('img-note-display-'+imgIdx);
-      if(dispEl){dispEl.classList.add('visible');dispEl.style.display='block'}
+    // Update badge
+    const badge=document.querySelector('[data-action="toggle-note"][data-idx="'+imgIdx+'"]');
+    if(badge){
+      const span=badge.querySelector('span');
+      if(noteText&&!span){const s=document.createElement('span');s.style.pointerEvents='none';s.textContent=' Note';badge.appendChild(s)}
+      else if(!noteText&&span)span.remove();
     }
+    // Close panel
+    const panel=document.getElementById('note-panel-'+imgIdx);
+    if(panel)panel.style.display='none';
   }
 }
 
