@@ -206,9 +206,25 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text-prim
 .img-preview-item .upload-spinner{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:18px;height:18px;border:2px solid var(--card-border);border-top-color:var(--accent);border-radius:50%;animation:spin .6s linear infinite;z-index:1}
 .img-url-divider{display:flex;align-items:center;gap:10px;margin:10px 0;font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px}
 .img-url-divider::before,.img-url-divider::after{content:'';flex:1;height:1px;background:var(--card-border)}
-.modal-gallery-img{width:100%;max-height:400px;object-fit:contain;display:none;border-radius:16px 16px 0 0}
-.modal-gallery-img.active{display:block}
-.modal-gallery-nav{position:absolute;top:50%;left:0;right:0;transform:translateY(-50%);display:flex;align-items:center;justify-content:space-between;padding:0 12px;pointer-events:none}
+/* Image Notes */
+.modal-gallery-img-wrap{position:relative;display:none;width:100%}
+.modal-gallery-img-wrap.active{display:block}
+.modal-gallery-img-wrap img{width:100%;max-height:400px;object-fit:contain;display:block}
+.img-note-badge{position:absolute;bottom:12px;right:12px;display:flex;align-items:center;gap:6px;padding:6px 12px;border-radius:20px;background:rgba(0,0,0,.7);color:#fff;font-size:12px;cursor:pointer;transition:background .15s;backdrop-filter:blur(4px)}
+.img-note-badge:hover{background:rgba(0,0,0,.85)}
+.img-note-badge svg{width:14px;height:14px;stroke:#fff;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.img-note-display{background:rgba(0,0,0,.75);color:#fff;padding:12px 16px;font-size:13px;line-height:1.6;backdrop-filter:blur(4px);display:none}
+.img-note-display.visible{display:block}
+.img-note-edit-area{background:rgba(0,0,0,.75);padding:10px 14px;display:none;gap:8px;align-items:flex-end;backdrop-filter:blur(4px)}
+.img-note-edit-area.visible{display:flex}
+.img-note-edit-area textarea{flex:1;padding:8px 10px;border:1px solid rgba(255,255,255,.2);border-radius:var(--radius-sm);background:rgba(255,255,255,.1);color:#fff;font-size:13px;font-family:'DM Sans',sans-serif;resize:none;outline:none;min-height:36px}
+.img-note-edit-area textarea::placeholder{color:rgba(255,255,255,.4)}
+.img-note-edit-area button{padding:6px 14px;border-radius:var(--radius-sm);border:none;background:var(--accent);color:#fff;font-size:12px;font-weight:500;cursor:pointer;font-family:'DM Sans',sans-serif;white-space:nowrap}
+.img-note-edit-area button:hover{background:#B8875E}
+/* Image note in upload preview */
+.img-preview-note{position:absolute;bottom:2px;left:2px;width:16px;height:16px;border-radius:50%;background:var(--accent);display:flex;align-items:center;justify-content:center;cursor:pointer}
+.img-preview-note svg{width:10px;height:10px;stroke:#fff;fill:none;stroke-width:2}
+.modal-gallery-nav{position:absolute;top:50%;left:0;right:0;transform:translateY(-50%);display:flex;align-items:center;justify-content:space-between;padding:0 12px;pointer-events:none;z-index:2}
 .gallery-prev,.gallery-next{width:36px;height:36px;border-radius:50%;background:rgba(0,0,0,.6);color:#fff;border:none;font-size:22px;cursor:pointer;pointer-events:all;display:flex;align-items:center;justify-content:center;transition:background .15s}
 .gallery-prev:hover,.gallery-next:hover{background:rgba(0,0,0,.85)}
 .gallery-counter{background:rgba(0,0,0,.5);color:#fff;padding:4px 12px;border-radius:20px;font-size:12px;font-weight:500;pointer-events:all}
@@ -438,8 +454,10 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text-prim
 const SHEET_ID='1x4muffjvZhrdbvsrBdTgkloo441-y1ThYGsgKKaT3mc';
 const SHEET_GIDS={Projects:997517085,Tasks:1481389517,References:1244683688,Platforms:1804897256,Tools:436378319,Skills:2054960753};
 const OAUTH_CLIENT_ID='98346290791-k6cn2qf20p1enp9mj3j3qoglrchcb9qh.apps.googleusercontent.com';
-const SCOPES='https://www.googleapis.com/auth/spreadsheets https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/drive.file';
+const SCOPES='https://www.googleapis.com/auth/spreadsheets https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/drive';
 const DRIVE_FOLDER_ID='1_hNiQtFsyqF1StcTls0drbuc1oo2o6C8';
+const SHARED_DRIVE_NAME='Omer studio';
+const REFS_FOLDER_NAME='Refs';
 const ICONS={compass:'#i-compass',store:'#i-store',cpu:'#i-cpu',map:'#i-map',image:'#i-image',zap:'#i-zap',folder:'#i-folder',default:'#i-folder'};
 const COLORS={strategy:'strategy',marketing:'marketing',creative:'creative',finance:'finance',revenue:'marketing',tools:'creative',research:'creative',development:'finance',planning:'strategy'};
 const CAT_COLORS={'Style Reference':'var(--accent)','Packaging':'var(--success)','Technique':'var(--info)','Color Palette':'var(--tag-marketing)','Branding':'var(--warning)'};
@@ -748,27 +766,48 @@ function initImageUploadDrag(){
 
 function handleImageFiles(files){
   if(!accessToken){showToast('Please sign in to upload images','error');return}
+  const titleField=document.getElementById('f-ref-title');
+  const boardName=titleField?titleField.value.trim():'';
   Array.from(files).forEach(f=>{
     if(!f.type.startsWith('image/')){showToast(f.name+' is not an image','error');return}
     if(f.size>10*1024*1024){showToast(f.name+' is too large (max 10MB)','error');return}
-    uploadImageToDrive(f);
+    uploadImageToDrive(f,boardName);
   });
 }
 
-async function findOrCreateFolder(parentId,folderName){
-  // Search for existing folder
-  const q=encodeURIComponent("'"+parentId+"' in parents and name='"+folderName+"' and mimeType='application/vnd.google-apps.folder' and trashed=false");
-  const searchResp=await fetch('https://www.googleapis.com/drive/v3/files?q='+q+'&fields=files(id,name)',{headers:{'Authorization':'Bearer '+accessToken}});
+async function findOrCreateFolder(parentId,folderName,driveId){
+  // Search for existing folder (supports shared drives)
+  let q=encodeURIComponent("'"+parentId+"' in parents and name='"+folderName+"' and mimeType='application/vnd.google-apps.folder' and trashed=false");
+  let url='https://www.googleapis.com/drive/v3/files?q='+q+'&fields=files(id,name)&supportsAllDrives=true&includeItemsFromAllDrives=true';
+  if(driveId)url+='&corpora=drive&driveId='+driveId;
+  const searchResp=await fetch(url,{headers:{'Authorization':'Bearer '+accessToken}});
   const searchData=await searchResp.json();
   if(searchData.files&&searchData.files.length>0)return searchData.files[0].id;
   // Create folder
-  const createResp=await fetch('https://www.googleapis.com/drive/v3/files',{method:'POST',headers:{'Authorization':'Bearer '+accessToken,'Content-Type':'application/json'},
-    body:JSON.stringify({name:folderName,mimeType:'application/vnd.google-apps.folder',parents:[parentId]})});
+  const meta={name:folderName,mimeType:'application/vnd.google-apps.folder',parents:[parentId]};
+  const createResp=await fetch('https://www.googleapis.com/drive/v3/files?supportsAllDrives=true',{method:'POST',headers:{'Authorization':'Bearer '+accessToken,'Content-Type':'application/json'},
+    body:JSON.stringify(meta)});
   const folder=await createResp.json();
+  if(folder.error)throw new Error(folder.error.message||'Failed to create folder');
   return folder.id;
 }
 
-async function uploadImageToDrive(file){
+// Cache shared drive info
+let sharedDriveId=null;let sharedDriveRefsId=null;
+
+async function getSharedDriveRefs(){
+  if(sharedDriveRefsId)return sharedDriveRefsId;
+  // Find the shared drive
+  const drivesResp=await fetch('https://www.googleapis.com/drive/v3/drives?q='+encodeURIComponent("name='"+SHARED_DRIVE_NAME+"'"),{headers:{'Authorization':'Bearer '+accessToken}});
+  const drivesData=await drivesResp.json();
+  if(!drivesData.drives||!drivesData.drives.length)throw new Error('Shared Drive "'+SHARED_DRIVE_NAME+'" not found');
+  sharedDriveId=drivesData.drives[0].id;
+  // Find or create Refs folder
+  sharedDriveRefsId=await findOrCreateFolder(sharedDriveId,REFS_FOLDER_NAME,sharedDriveId);
+  return sharedDriveRefsId;
+}
+
+async function uploadImageToDrive(file,boardName){
   // Show preview with spinner
   const previewId='preview-'+Date.now()+'-'+Math.random().toString(36).substr(2,5);
   const grid=document.getElementById('img-preview-grid');
@@ -782,21 +821,24 @@ async function uploadImageToDrive(file){
   reader.readAsDataURL(file);
 
   try{
-    // Find or create /refs/ subfolder
-    const refsFolderId=await findOrCreateFolder(DRIVE_FOLDER_ID,'refs');
+    // Get Refs folder in Shared Drive
+    const refsFolderId=await getSharedDriveRefs();
+    // Create or find board subfolder
+    const safeName=(boardName||'Unsorted').replace(/[^a-zA-Z0-9\u0590-\u05FF _-]/g,'_');
+    const boardFolderId=await findOrCreateFolder(refsFolderId,safeName,sharedDriveId);
     // Upload file
-    const metadata={name:Date.now()+'_'+file.name.replace(/[^a-zA-Z0-9._-]/g,'_'),parents:[refsFolderId]};
+    const metadata={name:Date.now()+'_'+file.name.replace(/[^a-zA-Z0-9._-]/g,'_'),parents:[boardFolderId]};
     const form=new FormData();
     form.append('metadata',new Blob([JSON.stringify(metadata)],{type:'application/json'}));
     form.append('file',file);
-    const resp=await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id,webContentLink,webViewLink',{
+    const resp=await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id,webContentLink,webViewLink&supportsAllDrives=true',{
       method:'POST',headers:{'Authorization':'Bearer '+accessToken},body:form});
     if(!resp.ok){const err=await resp.json();throw new Error(err.error?.message||'Upload failed')}
     const data=await resp.json();
 
     // Make file publicly viewable
-    await fetch('https://www.googleapis.com/drive/v3/files/'+data.id+'/permissions',{method:'POST',headers:{'Authorization':'Bearer '+accessToken,'Content-Type':'application/json'},
-      body:JSON.stringify({role:'reader',type:'anyone'})});
+    await fetch('https://www.googleapis.com/drive/v3/files/'+data.id+'/permissions?supportsAllDrives=true',{method:'POST',headers:{'Authorization':'Bearer '+accessToken,'Content-Type':'application/json'},
+      body:JSON.stringify({role:'reader',type:'anyone'})}).catch(()=>{});
 
     // Use direct thumbnail URL
     const imageUrl='https://drive.google.com/thumbnail?id='+data.id+'&sz=w800';
@@ -809,10 +851,11 @@ async function uploadImageToDrive(file){
 
     // Merge with existing URL field
     syncImageUrlField();
-    showToast('Image uploaded!','success');
+    showToast('Image uploaded to '+safeName+'/','success');
   }catch(e){
     const el=document.getElementById(previewId);if(el)el.remove();
     showToast('Upload failed: '+e.message,'error');
+    console.error('Drive upload error:',e);
   }
 }
 
@@ -899,14 +942,14 @@ async function submitReference(){
     const ref=DATA.references.find(x=>x.id===editingRefId);
     if(!ref){setSubmitting(false);return}
     const rowIndex=DATA.references.indexOf(ref)+2;
-    ok=await updateRow('References',rowIndex,[ref.id,title,cat,notes,tags,img,link,linkTitle,ref.added_by||'',ref.created_date||'']);
+    ok=await updateRow('References',rowIndex,[ref.id,title,cat,notes,tags,img,link,linkTitle,ref.added_by||'',ref.created_date||'',ref.image_notes||'']);
     setSubmitting(false);
     if(ok){closeForm();showToast('Reference updated!','success');await refreshData()}
   }else{
     const id='R'+(DATA.references.length+1).toString().padStart(3,'0');
     const addedBy=currentUser?currentUser.name:'Unknown';
     const today=new Date().toISOString().split('T')[0];
-    ok=await appendToSheet('References',[id,title,cat,notes,tags,img,link,linkTitle,addedBy,today]);
+    ok=await appendToSheet('References',[id,title,cat,notes,tags,img,link,linkTitle,addedBy,today,'']);
     setSubmitting(false);
     if(ok){closeForm();showToast('Reference added!','success');await refreshData()}
   }
@@ -1215,6 +1258,7 @@ function setRefFilter(c){REF_FILTER=c;renderReferences()}
 function openRefModal(id){
   const r=DATA.references.find(x=>x.id===id);if(!r)return;
   const allImgs=(r.image_urls||'').split(',').map(u=>u.trim()).filter(Boolean);
+  const imgNotes=parseImageNotes(r.image_notes);
   const tags=(r.tags||'').split(',').filter(Boolean);
   const links=(r.link_urls||'').split(',').filter(Boolean);
   const linkTitles=(r.link_titles||'').split(',');
@@ -1222,13 +1266,36 @@ function openRefModal(id){
   const catBg=CAT_BGS[r.category]||'var(--accent-soft)';
   let imgHtml='';
   if(allImgs.length>1){
-    imgHtml='<div class="modal-gallery">'+allImgs.map((img,i)=>
-      '<img class="modal-gallery-img'+(i===0?' active':'')+'" src="'+img+'" alt="'+r.title+' ('+(i+1)+')" onerror="this.style.display=\'none\'">'
-    ).join('')+'<div class="modal-gallery-nav"><button class="gallery-prev" onclick="galleryNav(-1)">‹</button><span class="gallery-counter">1 / '+allImgs.length+'</span><button class="gallery-next" onclick="galleryNav(1)">›</button></div><div class="modal-gallery-thumbs">'+allImgs.map((img,i)=>
+    imgHtml='<div class="modal-gallery" data-ref-id="'+r.id+'">'+allImgs.map((img,i)=>{
+      const note=imgNotes[i]||'';
+      return '<div class="modal-gallery-img-wrap'+(i===0?' active':'')+'" data-img-idx="'+i+'">'+
+        '<img src="'+img+'" alt="'+r.title+' ('+(i+1)+')" onerror="this.style.display=\'none\'">'+
+        '<div class="img-note-badge" onclick="event.stopPropagation();toggleImageNote('+i+')" title="'+(note?'View note':'Add note')+'">'+
+          '<svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>'+
+          (note?'<span>Note</span>':'')+
+        '</div>'+
+        '<div class="img-note-display" id="img-note-display-'+i+'">'+(note||'')+'</div>'+
+        (accessToken?'<div class="img-note-edit-area" id="img-note-edit-'+i+'">'+
+          '<textarea placeholder="Add a note to this image..." id="img-note-text-'+i+'">'+(note||'')+'</textarea>'+
+          '<button onclick="saveImageNote(\''+r.id+'\','+i+')">Save</button></div>':'')+
+      '</div>';
+    }).join('')+'<div class="modal-gallery-nav"><button class="gallery-prev" onclick="galleryNav(-1)">‹</button><span class="gallery-counter">1 / '+allImgs.length+'</span><button class="gallery-next" onclick="galleryNav(1)">›</button></div><div class="modal-gallery-thumbs">'+allImgs.map((img,i)=>
       '<img class="gallery-thumb'+(i===0?' active':'')+'" src="'+img+'" onclick="galleryGo('+i+')" onerror="this.style.display=\'none\'">'
     ).join('')+'</div></div>';
   }else if(allImgs.length===1){
-    imgHtml='<img class="modal-img" src="'+allImgs[0]+'" alt="'+r.title+'" onerror="this.outerHTML=\'<div class=modal-img-placeholder><span class=ic style=color:var(--text-muted)><svg style=width:32px;height:32px><use href=#i-image/></svg></span></div>\'">';
+    const note=imgNotes[0]||'';
+    imgHtml='<div class="modal-gallery" data-ref-id="'+r.id+'" style="position:relative">'+
+      '<div class="modal-gallery-img-wrap active" data-img-idx="0">'+
+        '<img class="modal-img" src="'+allImgs[0]+'" alt="'+r.title+'" onerror="this.outerHTML=\'<div class=modal-img-placeholder><span class=ic style=color:var(--text-muted)><svg style=width:32px;height:32px><use href=#i-image/></svg></span></div>\'">'+
+        '<div class="img-note-badge" onclick="event.stopPropagation();toggleImageNote(0)" title="'+(note?'View note':'Add note')+'">'+
+          '<svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>'+
+          (note?'<span>Note</span>':'')+
+        '</div>'+
+        '<div class="img-note-display" id="img-note-display-0">'+(note||'')+'</div>'+
+        (accessToken?'<div class="img-note-edit-area" id="img-note-edit-0">'+
+          '<textarea placeholder="Add a note to this image..." id="img-note-text-0">'+(note||'')+'</textarea>'+
+          '<button onclick="saveImageNote(\''+r.id+'\',0)">Save</button></div>':'')+
+      '</div></div>';
   }else{
     imgHtml='<div class="modal-img-placeholder"><span class="ic" style="color:var(--text-muted)"><svg style="width:32px;height:32px"><use href="#i-image"/></svg></span></div>';
   }
@@ -1246,16 +1313,64 @@ function closeModal(){document.getElementById('modal-overlay').classList.remove(
 // GALLERY NAV
 let galleryIdx=0;
 function galleryGo(i){
-  const imgs=document.querySelectorAll('.modal-gallery-img');
+  const wraps=document.querySelectorAll('.modal-gallery-img-wrap');
   const thumbs=document.querySelectorAll('.gallery-thumb');
-  if(!imgs.length)return;
-  galleryIdx=Math.max(0,Math.min(i,imgs.length-1));
-  imgs.forEach((img,j)=>{img.classList.toggle('active',j===galleryIdx)});
+  if(!wraps.length)return;
+  galleryIdx=Math.max(0,Math.min(i,wraps.length-1));
+  wraps.forEach((w,j)=>{w.classList.toggle('active',j===galleryIdx)});
   thumbs.forEach((th,j)=>{th.classList.toggle('active',j===galleryIdx)});
   const counter=document.querySelector('.gallery-counter');
-  if(counter)counter.textContent=(galleryIdx+1)+' / '+imgs.length;
+  if(counter)counter.textContent=(galleryIdx+1)+' / '+wraps.length;
 }
 function galleryNav(dir){galleryGo(galleryIdx+dir)}
+
+// IMAGE NOTES
+function parseImageNotes(str){
+  if(!str)return {};
+  try{return JSON.parse(str)}catch(e){return {}}
+}
+function toggleImageNote(idx){
+  const display=document.getElementById('img-note-display-'+idx);
+  const edit=document.getElementById('img-note-edit-'+idx);
+  if(edit&&accessToken){
+    // Toggle edit area
+    const isVis=edit.classList.contains('visible');
+    // Hide all others first
+    document.querySelectorAll('.img-note-edit-area,.img-note-display').forEach(el=>el.classList.remove('visible'));
+    if(!isVis){edit.classList.add('visible');edit.querySelector('textarea')?.focus()}
+  }else if(display){
+    const isVis=display.classList.contains('visible');
+    document.querySelectorAll('.img-note-display').forEach(el=>el.classList.remove('visible'));
+    if(!isVis&&display.textContent.trim())display.classList.add('visible');
+  }
+}
+async function saveImageNote(refId,imgIdx){
+  const textarea=document.getElementById('img-note-text-'+imgIdx);
+  if(!textarea)return;
+  const noteText=textarea.value.trim();
+  const ref=DATA.references.find(r=>r.id===refId);
+  if(!ref)return;
+  // Parse existing notes, update this one
+  const notes=parseImageNotes(ref.image_notes);
+  if(noteText)notes[imgIdx]=noteText;else delete notes[imgIdx];
+  const notesJson=JSON.stringify(notes);
+  // Save to sheet — image_notes is column K (11th column)
+  const rowIndex=DATA.references.indexOf(ref)+2;
+  const ok=await updateCell('References','K'+rowIndex,notesJson);
+  if(ok){
+    ref.image_notes=notesJson;
+    showToast('Note saved!','success');
+    // Update display
+    const display=document.getElementById('img-note-display-'+imgIdx);
+    if(display)display.textContent=noteText;
+    const badge=document.querySelector('.modal-gallery-img-wrap[data-img-idx="'+imgIdx+'"] .img-note-badge span');
+    if(badge&&noteText)badge.textContent='Note';
+    else if(!noteText&&badge)badge.remove();
+    // Hide edit area
+    document.getElementById('img-note-edit-'+imgIdx)?.classList.remove('visible');
+    if(noteText){document.getElementById('img-note-display-'+imgIdx)?.classList.add('visible')}
+  }
+}
 
 // SKILLS MATRIX
 const LEVEL_LABELS={1:'Beginner',2:'Learning',3:'Intermediate',4:'Advanced',5:'Expert'};
