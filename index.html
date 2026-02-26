@@ -1330,18 +1330,27 @@ function parseImageNotes(str){
   try{return JSON.parse(str)}catch(e){return {}}
 }
 function toggleImageNote(idx){
+  console.log('toggleImageNote called, idx=',idx,'accessToken=',!!accessToken);
   const display=document.getElementById('img-note-display-'+idx);
   const edit=document.getElementById('img-note-edit-'+idx);
+  console.log('display=',display,'edit=',edit);
+  // Hide all first
+  document.querySelectorAll('.img-note-edit-area,.img-note-display').forEach(el=>{el.classList.remove('visible');el.style.display=''});
   if(edit&&accessToken){
-    // Toggle edit area
-    const isVis=edit.classList.contains('visible');
-    // Hide all others first
-    document.querySelectorAll('.img-note-edit-area,.img-note-display').forEach(el=>el.classList.remove('visible'));
-    if(!isVis){edit.classList.add('visible');edit.querySelector('textarea')?.focus()}
-  }else if(display){
-    const isVis=display.classList.contains('visible');
-    document.querySelectorAll('.img-note-display').forEach(el=>el.classList.remove('visible'));
-    if(!isVis&&display.textContent.trim())display.classList.add('visible');
+    const isVis=edit.style.display==='flex';
+    // Toggle with direct style as fallback
+    if(!isVis){
+      edit.classList.add('visible');
+      edit.style.display='flex';
+      edit.querySelector('textarea')?.focus();
+      console.log('showing edit area');
+    }else{
+      edit.style.display='';
+      console.log('hiding edit area');
+    }
+  }else if(display&&display.textContent.trim()){
+    display.classList.add('visible');
+    display.style.display='block';
   }
 }
 async function saveImageNote(refId,imgIdx){
@@ -1367,8 +1376,12 @@ async function saveImageNote(refId,imgIdx){
     if(badge&&noteText)badge.textContent='Note';
     else if(!noteText&&badge)badge.remove();
     // Hide edit area
-    document.getElementById('img-note-edit-'+imgIdx)?.classList.remove('visible');
-    if(noteText){document.getElementById('img-note-display-'+imgIdx)?.classList.add('visible')}
+    const editEl=document.getElementById('img-note-edit-'+imgIdx);
+    if(editEl){editEl.classList.remove('visible');editEl.style.display=''}
+    if(noteText){
+      const dispEl=document.getElementById('img-note-display-'+imgIdx);
+      if(dispEl){dispEl.classList.add('visible');dispEl.style.display='block'}
+    }
   }
 }
 
