@@ -898,7 +898,7 @@ async function uploadImageToDrive(file,boardName){
       body:JSON.stringify({role:'reader',type:'anyone'})}).catch(()=>{});
 
     // Use direct thumbnail URL
-    const imageUrl='https://drive.google.com/thumbnail?id='+data.id+'&sz=w800';
+    const imageUrl='https://lh3.googleusercontent.com/d/'+data.id+'=w800';
     uploadedImageUrls.push(imageUrl);
 
     // Update preview — remove spinner, add remove button
@@ -924,7 +924,7 @@ function removeUploadedImage(previewId,url){
 
 function syncImageUrlField(){
   const field=document.getElementById('f-ref-img');if(!field)return;
-  const manualUrls=field.value.split(',').map(u=>u.trim()).filter(u=>u&&!u.includes('drive.google.com/thumbnail'));
+  const manualUrls=field.value.split(',').map(u=>u.trim()).filter(u=>u&&!u.includes('lh3.googleusercontent.com/d/'));
   const allUrls=[...uploadedImageUrls,...manualUrls].filter(Boolean);
   field.value=allUrls.join(', ');
 }
@@ -1009,7 +1009,7 @@ async function uploadBlobToDrive(blob,boardName,originalUrl){
     // Make public
     await fetch('https://www.googleapis.com/drive/v3/files/'+data.id+'/permissions?supportsAllDrives=true',{method:'POST',headers:{'Authorization':'Bearer '+accessToken,'Content-Type':'application/json'},
       body:JSON.stringify({role:'reader',type:'anyone'})}).catch(()=>{});
-    const driveUrl='https://drive.google.com/thumbnail?id='+data.id+'&sz=w800';
+    const driveUrl='https://lh3.googleusercontent.com/d/'+data.id+'=w800';
     uploadedImageUrls.push(driveUrl);
     return driveUrl;
   }catch(e){console.error('uploadBlobToDrive error:',e);return null}
@@ -1194,7 +1194,7 @@ async function aiAutoFillReference(){
       if(grid){
         grid.innerHTML=allUrls.map((imgUrl,i)=>{
           const pid='ai-img-'+i;
-          const isDrive=imgUrl.includes('drive.google.com');
+          const isDrive=imgUrl.includes('lh3.googleusercontent.com');
           return '<div class="img-preview-item" id="'+pid+'" style="position:relative"><img src="'+imgUrl+'" onerror="this.style.display=\'none\';this.nextElementSibling.style.display=\'flex\'"><div style="display:none;width:100%;height:100%;align-items:center;justify-content:center;background:var(--bg);font-size:9px;color:var(--text-muted);text-align:center;padding:4px">'+(isDrive?'✓ Drive':'⚠️ URL')+'</div><button class="img-remove" onclick="removeExistingImage(\''+pid+'\')">×</button></div>';
         }).join('');
       }
