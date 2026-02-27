@@ -283,6 +283,24 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text-prim
 .btn-submit:disabled{opacity:.5;cursor:not-allowed}
 .form-hint{font-size:11px;color:var(--text-muted);margin-top:4px}
 .form-error{color:var(--danger);font-size:12px;margin-top:4px;display:none}
+/* Claude AI Auto-fill */
+.ai-fill-group{background:linear-gradient(135deg,#f7f0e8,#ede4d8);border:1px solid var(--accent);border-radius:var(--radius);padding:16px;margin-bottom:20px}
+.ai-fill-header{display:flex;align-items:center;gap:8px;margin-bottom:10px}
+.ai-fill-header .ai-icon{width:28px;height:28px;border-radius:8px;background:linear-gradient(135deg,#D4956A,#C4856A);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.ai-fill-header .ai-icon svg{width:16px;height:16px;stroke:#fff;fill:none}
+.ai-fill-header .ai-label{font-size:13px;font-weight:600;color:var(--accent)}
+.ai-fill-header .ai-hint{font-size:11px;color:var(--text-muted);margin-left:auto}
+.ai-fill-row{display:flex;gap:8px;align-items:stretch}
+.ai-fill-row input{flex:1}
+.btn-ai{padding:8px 16px;border-radius:var(--radius-sm);border:none;background:linear-gradient(135deg,#D4956A,#B8875E);color:#fff;font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .15s;display:flex;align-items:center;gap:6px;white-space:nowrap}
+.btn-ai:hover{background:linear-gradient(135deg,#C4856A,#A8774E);box-shadow:0 2px 8px rgba(196,149,106,.3)}
+.btn-ai:disabled{opacity:.6;cursor:not-allowed}
+.btn-ai svg{width:14px;height:14px;stroke:#fff;fill:none}
+.ai-status{margin-top:10px;padding:10px 14px;border-radius:var(--radius-sm);font-size:12px;line-height:1.5;display:none}
+.ai-status.loading{display:block;background:#fff;color:var(--text-secondary);border:1px solid var(--card-border)}
+.ai-status.success{display:block;background:var(--success-soft);color:var(--success);border:1px solid var(--success)}
+.ai-status.error{display:block;background:var(--danger-soft);color:var(--danger);border:1px solid var(--danger)}
+.ai-status .ai-spinner{display:inline-block;width:14px;height:14px;border:2px solid var(--card-border);border-top-color:var(--accent);border-radius:50%;animation:spin .6s linear infinite;vertical-align:middle;margin-right:6px}
 /* Toast */
 .toast{position:fixed;bottom:24px;right:24px;padding:14px 22px;border-radius:var(--radius);background:var(--sidebar-bg);color:#fff;font-size:13px;font-weight:500;box-shadow:var(--shadow-lg);z-index:2000;transform:translateY(100px);opacity:0;transition:all .3s ease;display:flex;align-items:center;gap:10px}
 .toast.show{transform:translateY(0);opacity:1}
@@ -354,6 +372,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text-prim
   <symbol id="i-log-out" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></symbol>
   <symbol id="i-trash" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></symbol>
   <symbol id="i-edit" viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></symbol>
+  <symbol id="i-sparkle" viewBox="0 0 24 24"><path d="M12 2L14.5 9.5L22 12L14.5 14.5L12 22L9.5 14.5L2 12L9.5 9.5L12 2Z"/></symbol>
 </svg>
 
 <nav class="sidebar">
@@ -722,6 +741,11 @@ function openAddForm(type){
       '<div class="form-actions"><button class="btn-cancel" onclick="closeForm()">Cancel</button><button class="btn-submit" id="f-submit" onclick="submitTask()">Add Task</button></div></div>';
   }else if(type==='reference'){
     fm.innerHTML='<div class="modal-body"><div class="form-title">Add Reference</div>'+
+      '<div class="ai-fill-group">'+
+        '<div class="ai-fill-header"><div class="ai-icon"><span class="ic ic-sm"><svg><use href="#i-sparkle"/></svg></span></div><div class="ai-label">Auto-fill with AI</div><div class="ai-hint">Paste a URL and let Claude fill the form</div></div>'+
+        '<div class="ai-fill-row"><input class="form-input" id="f-ai-url" placeholder="https://artstation.com/marketplace/... or any product page"><button class="btn-ai" id="btn-ai-fill" data-action="ai-fill"><span class="ic ic-sm"><svg><use href="#i-sparkle"/></svg></span> Auto-fill</button></div>'+
+        '<div class="ai-status" id="ai-status"></div>'+
+      '</div>'+
       '<div class="form-group"><label class="form-label">Title *</label><input class="form-input" id="f-ref-title" placeholder="Reference name"></div>'+
       '<div class="form-group"><label class="form-label">Category</label><select class="form-select" id="f-ref-cat"><option value="">Select category</option><option>Style Reference</option><option>Packaging</option><option>Technique</option><option>Color Palette</option><option>Branding</option></select></div>'+
       '<div class="form-group"><label class="form-label">Notes</label><textarea class="form-textarea" id="f-ref-notes" placeholder="Why is this inspiring?"></textarea></div>'+
@@ -886,6 +910,97 @@ function removeExistingImage(previewId){
   const field=document.getElementById('f-ref-img');if(!field)return;
   const urls=field.value.split(',').map(u=>u.trim()).filter(u=>u&&u!==imgSrc);
   field.value=urls.join(', ');
+}
+
+// CLAUDE AI AUTO-FILL
+const ANTHROPIC_API_URL='https://api.anthropic.com/v1/messages';
+
+document.getElementById('form-modal').addEventListener('click',function(e){
+  const el=e.target.closest('[data-action="ai-fill"]');
+  if(!el)return;
+  e.preventDefault();
+  aiAutoFillReference();
+});
+
+async function aiAutoFillReference(){
+  const urlInput=document.getElementById('f-ai-url');
+  const status=document.getElementById('ai-status');
+  const btn=document.getElementById('btn-ai-fill');
+  const url=urlInput?urlInput.value.trim():'';
+  if(!url){showToast('Please paste a URL first','error');return}
+  if(!url.startsWith('http')){showToast('Please enter a valid URL','error');return}
+
+  btn.disabled=true;
+  status.className='ai-status loading';
+  status.innerHTML='<span class="ai-spinner"></span> Claude is analyzing the page...';
+
+  try{
+    const apiKey=getAnthropicKey();
+    if(!apiKey)throw new Error('API key required');
+
+    const response=await fetch(ANTHROPIC_API_URL,{
+      method:'POST',
+      headers:{'Content-Type':'application/json','x-api-key':apiKey,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+      body:JSON.stringify({
+        model:'claude-sonnet-4-20250514',
+        max_tokens:1500,
+        tools:[{type:'web_search_20250305',name:'web_search'}],
+        messages:[{role:'user',content:'Analyze this product/portfolio page for my reference board. URL: '+url+'\n\n'+
+          'Search this URL and extract info. Respond ONLY with a JSON object (no markdown, no backticks):\n'+
+          '{"title":"Product name","category":"One of: Style Reference, Packaging, Technique, Color Palette, Branding","tags":"comma-separated tags (software, style, medium, max 6)",'+
+          '"images":"comma-separated direct image URLs (best 3-5, not thumbnails)",'+
+          '"notes":"2-3 short sentences: what is interesting, tools/software used, useful for Look Dev artist",'+
+          '"price":"price if shown or empty","platform":"ArtStation/Blender Market/etc","link_title":"platform name"}\n'+
+          'ONLY JSON. No other text.'}]
+      })
+    });
+
+    if(!response.ok){
+      const err=await response.json().catch(()=>({}));
+      throw new Error(err.error?.message||'API error ('+response.status+')');
+    }
+
+    const data=await response.json();
+    const textBlock=data.content?.find(b=>b.type==='text');
+    if(!textBlock)throw new Error('No response from Claude');
+
+    let jsonStr=textBlock.text.trim();
+    if(jsonStr.startsWith('```'))jsonStr=jsonStr.replace(/```json?\n?/,'').replace(/\n?```$/,'').trim();
+    const result=JSON.parse(jsonStr);
+
+    // Fill form
+    if(result.title)document.getElementById('f-ref-title').value=result.title;
+    if(result.category){
+      const sel=document.getElementById('f-ref-cat');
+      const opts=[...sel.options];
+      const match=opts.find(o=>o.value===result.category)||opts.find(o=>o.value.toLowerCase().includes((result.category||'').toLowerCase().split(' ')[0]));
+      if(match)sel.value=match.value;
+    }
+    if(result.notes)document.getElementById('f-ref-notes').value=result.notes;
+    if(result.tags)document.getElementById('f-ref-tags').value=result.tags;
+    if(result.images)document.getElementById('f-ref-img').value=result.images;
+    document.getElementById('f-ref-link').value=url;
+    if(result.link_title||result.platform)document.getElementById('f-ref-linktitle').value=result.link_title||result.platform||'';
+
+    status.className='ai-status success';
+    const priceNote=result.price?' · Price: '+result.price:'';
+    status.textContent='✓ Form filled'+(result.platform?' from '+result.platform:'')+priceNote+'. Review and edit before saving.';
+    btn.disabled=false;
+
+  }catch(e){
+    console.error('AI auto-fill error:',e);
+    status.className='ai-status error';
+    status.textContent='✗ '+(e.message||'Unknown error');
+    btn.disabled=false;
+  }
+}
+
+function getAnthropicKey(){
+  let key=getCookie('omer_anthropic_key');
+  if(key)return key;
+  key=prompt('Enter your Anthropic API key for AI features.\nGet one at console.anthropic.com/settings/keys\n\nSaved as cookie for 30 days.');
+  if(key){setCookie('omer_anthropic_key',key.trim(),86400*30);return key.trim()}
+  return null;
 }
 
 function openEditReference(id){
