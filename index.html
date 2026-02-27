@@ -965,51 +965,74 @@ async function aiAutoFillReference(){
     const apiKey=getAnthropicKey();
     if(!apiKey)throw new Error('API key required');
 
-    const response=await fetch(ANTHROPIC_API_URL,{
-      method:'POST',
-      headers:{'Content-Type':'application/json','x-api-key':apiKey,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
-      body:JSON.stringify({
-        model:'claude-sonnet-4-20250514',
-        max_tokens:4000,
-        tools:[{type:'web_search_20250305',name:'web_search'}],
-        messages:[{role:'user',content:'I need to analyze this page and extract ALL images and info for my reference board.\n\nURL: '+url+'\n\n'+
-          'IMPORTANT INSTRUCTIONS:\n'+
-          '1. Search and fetch this URL\n'+
-          '2. Find ALL showcase/gallery images on the page (not icons, not avatars, not UI elements)\n'+
-          '3. For ArtStation: images are hosted on cdna.artstation.com, cdnb.artstation.com, etc. Get the FULL SIZE URLs (containing /large/ or /4k/ in the path, NOT /small/ or /medium/)\n'+
-          '4. For other platforms: get the highest resolution direct image URLs available\n'+
-          '5. Include ALL gallery/showcase images, not just 3-5\n\n'+
-          'Respond ONLY with a JSON object (no markdown, no backticks, no explanation before or after):\n'+
-          '{\n'+
-          '  "title": "Product/artwork name",\n'+
-          '  "category": "One of: Style Reference, Packaging, Technique, Color Palette, Branding",\n'+
-          '  "tags": "comma-separated tags: software used, art style, medium, technique (max 8 tags)",\n'+
-          '  "images": "comma-separated direct image URLs — ALL showcase images from the page, full resolution",\n'+
-          '  "notes": "2-3 short sentences: what tools/software were used, what makes this useful for a Look Dev / 3D artist, key techniques shown",\n'+
-          '  "price": "price if listed, or empty string",\n'+
-          '  "platform": "ArtStation / Blender Market / Gumroad / etc",\n'+
-          '  "link_title": "platform name for display"\n'+
-          '}\n\nONLY the JSON object. Nothing else.'}]
-      })
-    });
+    const prompt='I need to analyze this page and extract ALL images and info for my reference board.\n\nURL: '+url+'\n\n'+
+      'IMPORTANT INSTRUCTIONS:\n'+
+      '1. Search and fetch this URL\n'+
+      '2. Find ALL showcase/gallery images on the page (not icons, not avatars, not UI elements)\n'+
+      '3. For ArtStation: images are hosted on cdna.artstation.com, cdnb.artstation.com, etc. Get the FULL SIZE URLs (containing /large/ or /4k/ in the path, NOT /small/ or /medium/)\n'+
+      '4. For other platforms: get the highest resolution direct image URLs available\n'+
+      '5. Include ALL gallery/showcase images, not just 3-5\n\n'+
+      'Respond ONLY with a JSON object (no markdown, no backticks, no explanation before or after):\n'+
+      '{\n'+
+      '  "title": "Product/artwork name",\n'+
+      '  "category": "One of: Style Reference, Packaging, Technique, Color Palette, Branding",\n'+
+      '  "tags": "comma-separated tags: software used, art style, medium, technique (max 8 tags)",\n'+
+      '  "images": "comma-separated direct image URLs — ALL showcase images from the page, full resolution",\n'+
+      '  "notes": "2-3 short sentences: what tools/software were used, what makes this useful for a Look Dev / 3D artist, key techniques shown",\n'+
+      '  "price": "price if listed, or empty string",\n'+
+      '  "platform": "ArtStation / Blender Market / Gumroad / etc",\n'+
+      '  "link_title": "platform name for display"\n'+
+      '}\n\nONLY the JSON object. Nothing else.';
 
-    if(!response.ok){
-      const err=await response.json().catch(()=>({}));
-      throw new Error(err.error?.message||'API error ('+response.status+')');
+    // Multi-turn loop to handle tool use (web search)
+    let messages=[{role:'user',content:prompt}];
+    let result=null;
+    const headers={'Content-Type':'application/json','x-api-key':apiKey,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'};
+
+    for(let turn=0;turn<5;turn++){
+      status.innerHTML='<span class="ai-spinner"></span> Claude is '+(turn===0?'analyzing the page':'gathering more info')+'... (step '+(turn+1)+')';
+      const response=await fetch(ANTHROPIC_API_URL,{
+        method:'POST',headers,
+        body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:4000,tools:[{type:'web_search_20250305',name:'web_search'}],messages})
+      });
+      if(!response.ok){const err=await response.json().catch(()=>({}));throw new Error(err.error?.message||'API error ('+response.status+')')}
+
+      const data=await response.json();
+
+      // If stop_reason is end_turn, we have the final answer
+      if(data.stop_reason==='end_turn'){
+        // Find text with JSON in it
+        const allText=data.content.filter(b=>b.type==='text').map(b=>b.text).join('\n');
+        const jsonMatch=allText.match(/\{[\s\S]*\}/);
+        if(jsonMatch){
+          let jsonStr=jsonMatch[0];
+          // Clean markdown
+          if(jsonStr.includes('```'))jsonStr=jsonStr.replace(/```json?\s*/g,'').replace(/```/g,'').trim();
+          result=JSON.parse(jsonStr);
+        }
+        break;
+      }
+
+      // If stop_reason is tool_use, we need to continue the conversation
+      // Add assistant's response to messages
+      messages.push({role:'assistant',content:data.content});
+
+      // Collect tool results — for server-side web_search, results are already in the content
+      // But if there are tool_use blocks that need results, add empty results
+      const toolUseBlocks=data.content.filter(b=>b.type==='tool_use');
+      if(toolUseBlocks.length){
+        const toolResults=toolUseBlocks.map(tb=>({
+          type:'tool_result',
+          tool_use_id:tb.id,
+          content:'Search completed. Please provide the JSON response now.'
+        }));
+        messages.push({role:'user',content:toolResults});
+      }else{
+        break; // No more tool calls, done
+      }
     }
 
-    const data=await response.json();
-    const textBlock=data.content?.find(b=>b.type==='text');
-    if(!textBlock)throw new Error('No response from Claude');
-
-    // Extract JSON from response — Claude may include text before/after
-    let jsonStr=textBlock.text.trim();
-    // Remove markdown code blocks
-    if(jsonStr.includes('```'))jsonStr=jsonStr.replace(/```json?\s*/g,'').replace(/```/g,'').trim();
-    // Find JSON object in the text
-    const jsonMatch=jsonStr.match(/\{[\s\S]*\}/);
-    if(!jsonMatch)throw new Error('Could not find JSON in response. Claude said: '+jsonStr.substring(0,100));
-    const result=JSON.parse(jsonMatch[0]);
+    if(!result)throw new Error('Could not extract data from the page. Try using the Chat feature below for a more interactive approach.');
 
     // Fill form
     if(result.title)document.getElementById('f-ref-title').value=result.title;
@@ -1735,6 +1758,8 @@ async function saveImageNote(refId,imgIdx,noteText){
       }
     }
     showToast('Note saved!','success');
+    // Re-render reference cards to update note badges
+    renderReferences();
     // Close note section
     const section=document.getElementById('img-note-section');
     if(section)section.style.display='none';
