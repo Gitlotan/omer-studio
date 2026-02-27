@@ -764,7 +764,7 @@ function openAddForm(type){
   }else if(type==='reference'){
     fm.innerHTML='<div class="modal-body"><div class="form-title">Add Reference</div>'+
       '<div class="ai-fill-group">'+
-        '<div class="ai-fill-header"><div class="ai-icon"><span class="ic ic-sm"><svg><use href="#i-sparkle"/></svg></span></div><div class="ai-label">Auto-fill with AI</div><div class="ai-hint">Paste a URL and let Claude fill the form</div></div>'+
+        '<div class="ai-fill-header"><div class="ai-icon"><span class="ic ic-sm"><svg><use href="#i-sparkle"/></svg></span></div><div class="ai-label">Auto-fill with AI</div><div class="ai-hint"><span style="cursor:pointer;text-decoration:underline" onclick="setupImageProxy()">⚙️ Image Proxy</span> · Paste a URL and let Claude fill the form</div></div>'+
         '<div class="ai-fill-row"><input class="form-input" id="f-ai-url" placeholder="https://artstation.com/marketplace/... or any product page"><button class="btn-ai" id="btn-ai-fill" data-action="ai-fill"><span class="ic ic-sm"><svg><use href="#i-sparkle"/></svg></span> Auto-fill</button></div>'+
         '<div class="ai-status" id="ai-status"></div>'+
         '<div class="ai-chat-panel" id="ai-chat-panel">'+
@@ -929,8 +929,7 @@ function syncImageUrlField(){
   field.value=allUrls.join(', ');
 }
 
-// FETCH REMOTE IMAGE AND UPLOAD TO DRIVE (via Apps Script proxy to bypass CORS)
-const APPS_SCRIPT_PROXY=localStorage.getItem('omer_apps_script_url')||'';
+// FETCH REMOTE IMAGE AND UPLOAD TO DRIVE
 
 async function fetchAndUploadImage(imageUrl,boardName){
   if(!accessToken)return null;
@@ -946,18 +945,22 @@ async function fetchAndUploadImage(imageUrl,boardName){
     }
   }catch(e){console.log('Direct fetch failed (CORS):',e.message)}
 
-  // Method 2: Use Apps Script proxy
-  if(APPS_SCRIPT_PROXY){
+  // Method 2: Use Apps Script proxy (fetches image server-side, returns base64)
+  const proxyUrl=localStorage.getItem('omer_apps_script_url');
+  if(proxyUrl){
     try{
-      const proxyResp=await fetch(APPS_SCRIPT_PROXY+'?url='+encodeURIComponent(imageUrl));
+      const proxyResp=await fetch(proxyUrl+'?action=proxy&url='+encodeURIComponent(imageUrl));
       if(proxyResp.ok){
         const data=await proxyResp.json();
-        if(data.success&&data.driveUrl){
-          uploadedImageUrls.push(data.driveUrl);
-          return data.driveUrl;
+        if(data.success&&data.base64){
+          const byteChars=atob(data.base64);
+          const byteArray=new Uint8Array(byteChars.length);
+          for(let i=0;i<byteChars.length;i++)byteArray[i]=byteChars.charCodeAt(i);
+          const blob=new Blob([byteArray],{type:data.contentType||'image/jpeg'});
+          return await uploadBlobToDrive(blob,boardName,imageUrl);
         }
       }
-    }catch(e){console.log('Apps Script proxy failed:',e.message)}
+    }catch(e){console.log('Apps Script proxy download failed:',e.message)}
   }
 
   // Method 3: Use canvas trick (works if image loads in img tag even without CORS)
@@ -1031,95 +1034,42 @@ const ANTHROPIC_API_URL='https://api.anthropic.com/v1/messages';
 
 // Direct image extraction from known platforms
 async function extractArtStationImages(url){
-  const images=[];
-  
-  // ArtStation artwork: /artwork/HASH or /projects/HASH
-  let hash=null;
-  let apiUrl=null;
-  
-  // Match artwork pages
-  const artMatch=url.match(/artstation\.com\/artwork\/([a-zA-Z0-9]+)/);
-  if(artMatch){
-    hash=artMatch[1];
-    apiUrl='https://www.artstation.com/projects/'+hash+'.json';
-  }
-  
-  // Match marketplace pages: /marketplace/p/HASH/slug
-  const mktMatch=url.match(/artstation\.com\/marketplace\/p\/([a-zA-Z0-9]+)/);
-  if(mktMatch){
-    hash=mktMatch[1];
-    // Marketplace uses a different API endpoint
-    apiUrl='https://www.artstation.com/marketplace/p/'+hash+'.json';
-  }
-
-  if(!apiUrl)return images;
-
-  try{
-    const resp=await fetch(apiUrl,{headers:{'Accept':'application/json'}});
-    if(!resp.ok){
-      // Try alternative endpoint for marketplace
-      if(mktMatch){
-        const altResp=await fetch('https://www.artstation.com/marketplace/products/'+hash+'.json',{headers:{'Accept':'application/json'}});
-        if(altResp.ok){
-          const data=await altResp.json();
-          return extractImagesFromArtStationJson(data);
-        }
-      }
-      throw new Error('API returned '+resp.status);
-    }
-    const data=await resp.json();
-    return extractImagesFromArtStationJson(data);
-  }catch(e){
-    console.log('ArtStation API failed:',e.message);
-    // Fallback: try to fetch the page HTML and extract og:image
+  // Try Apps Script proxy first (bypasses CORS)
+  const proxyUrl=localStorage.getItem('omer_apps_script_url');
+  if(proxyUrl){
     try{
-      const pageResp=await fetch(url);
-      if(pageResp.ok){
-        const html=await pageResp.text();
-        // Extract og:image
-        const ogMatch=html.match(/<meta[^>]*property=["']og:image["'][^>]*content=["']([^"']+)["']/i);
-        if(ogMatch)images.push(ogMatch[1]);
-        // Extract all CDN image URLs from the HTML
-        const cdnMatches=html.matchAll(/https:\/\/cdn[a-z]\.artstation\.com\/p\/assets\/images\/images\/[^\s"'<>]+/g);
-        for(const m of cdnMatches){
-          const imgUrl=m[0].replace(/\/small\//g,'/large/').replace(/\/medium\//g,'/large/');
-          if(!images.includes(imgUrl))images.push(imgUrl);
-        }
+      const resp=await fetch(proxyUrl+'?action=extract&url='+encodeURIComponent(url));
+      if(resp.ok){
+        const data=await resp.json();
+        if(data.success&&data.images&&data.images.length)return data.images;
       }
-    }catch(e2){console.log('HTML fallback failed:',e2.message)}
+    }catch(e){console.log('Apps Script extract failed:',e.message)}
   }
-  return images;
-}
-
-function extractImagesFromArtStationJson(data){
+  
+  // Fallback: try direct ArtStation JSON API (may fail due to CORS)
   const images=[];
-  // Handle artwork format (assets array)
-  if(data.assets){
-    for(const asset of data.assets){
-      if(asset.image_url){
-        // Get large version
-        const url=asset.image_url.replace(/\/small\//g,'/large/').replace(/\/medium\//g,'/large/');
-        images.push(url);
-      }
-    }
-  }
-  // Handle marketplace format (may have different structure)
-  if(data.images){
-    for(const img of data.images){
-      const url=(img.image_url||img.url||'').replace(/\/small\//g,'/large/').replace(/\/medium\//g,'/large/');
-      if(url)images.push(url);
-    }
-  }
-  // Check for cover image
-  if(data.cover&&data.cover.image_url&&!images.includes(data.cover.image_url)){
-    images.unshift(data.cover.image_url);
-  }
-  // Marketplace product images
-  if(data.product_images){
-    for(const img of data.product_images){
-      const url=(img.image_url||img.url||'');
-      if(url&&!images.includes(url))images.push(url);
-    }
+  let hash=null;
+  const artMatch=url.match(/artstation\.com\/artwork\/([a-zA-Z0-9]+)/);
+  if(artMatch)hash=artMatch[1];
+  const mktMatch=url.match(/artstation\.com\/marketplace\/p\/([a-zA-Z0-9]+)/);
+  if(mktMatch)hash=mktMatch[1];
+  if(!hash)return images;
+
+  const endpoints=[
+    'https://www.artstation.com/projects/'+hash+'.json',
+    'https://www.artstation.com/marketplace/p/'+hash+'.json'
+  ];
+  for(const ep of endpoints){
+    try{
+      const resp=await fetch(ep,{headers:{'Accept':'application/json'}});
+      if(!resp.ok)continue;
+      const data=await resp.json();
+      if(data.assets)data.assets.forEach(a=>{if(a.image_url)images.push(a.image_url.replace(/\/small\//g,'/large/').replace(/\/medium\//g,'/large/'))});
+      if(data.product_images)data.product_images.forEach(a=>{const u=a.image_url||a.url;if(u)images.push(u)});
+      if(data.images)data.images.forEach(a=>{const u=a.image_url||a.url;if(u)images.push(u)});
+      if(data.cover&&data.cover.image_url)images.unshift(data.cover.image_url);
+      if(images.length)return images;
+    }catch(e){continue}
   }
   return images;
 }
@@ -1145,7 +1095,15 @@ async function aiAutoFillReference(){
 
   // Try to extract images directly from ArtStation API first
   let directImages=[];
+  status.innerHTML='<span class="ai-spinner"></span> Extracting images...';
   try{directImages=await extractArtStationImages(url)}catch(e){console.log('Direct extraction:',e.message)}
+
+  // Check if Apps Script proxy is configured for image extraction
+  if(!localStorage.getItem('omer_apps_script_url')&&directImages.length===0){
+    status.innerHTML='<span class="ai-spinner"></span> Getting page info from Claude (set up Image Proxy for better results)...';
+  }else{
+    status.innerHTML='<span class="ai-spinner"></span> Analyzing page'+(directImages.length?' ('+directImages.length+' images found)':'')+'...';
+  }
 
   try{
     const apiKey=getAnthropicKey();
@@ -1307,6 +1265,16 @@ function getAnthropicKey(){
   key=prompt('Enter your Anthropic API key for AI features.\nGet one at console.anthropic.com/settings/keys\n\nSaved as cookie for 30 days.');
   if(key){setCookie('omer_anthropic_key',key.trim(),86400*30);return key.trim()}
   return null;
+}
+
+function setupImageProxy(){
+  const current=localStorage.getItem('omer_apps_script_url')||'';
+  const url=prompt('Enter your Google Apps Script Web App URL for image proxy.\n\nCurrent: '+(current||'Not configured')+'\n\nThis enables downloading images from ArtStation and other sites.\nSee setup instructions in the project README.',current);
+  if(url!==null){
+    if(url.trim())localStorage.setItem('omer_apps_script_url',url.trim());
+    else localStorage.removeItem('omer_apps_script_url');
+    showToast(url.trim()?'Image proxy configured!':'Image proxy removed','success');
+  }
 }
 
 // CLAUDE MINI CHAT
