@@ -943,15 +943,26 @@ async function aiAutoFillReference(){
       headers:{'Content-Type':'application/json','x-api-key':apiKey,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
       body:JSON.stringify({
         model:'claude-sonnet-4-20250514',
-        max_tokens:1500,
+        max_tokens:4000,
         tools:[{type:'web_search_20250305',name:'web_search'}],
-        messages:[{role:'user',content:'Analyze this product/portfolio page for my reference board. URL: '+url+'\n\n'+
-          'Search this URL and extract info. Respond ONLY with a JSON object (no markdown, no backticks):\n'+
-          '{"title":"Product name","category":"One of: Style Reference, Packaging, Technique, Color Palette, Branding","tags":"comma-separated tags (software, style, medium, max 6)",'+
-          '"images":"comma-separated direct image URLs (best 3-5, not thumbnails)",'+
-          '"notes":"2-3 short sentences: what is interesting, tools/software used, useful for Look Dev artist",'+
-          '"price":"price if shown or empty","platform":"ArtStation/Blender Market/etc","link_title":"platform name"}\n'+
-          'ONLY JSON. No other text.'}]
+        messages:[{role:'user',content:'I need to analyze this page and extract ALL images and info for my reference board.\n\nURL: '+url+'\n\n'+
+          'IMPORTANT INSTRUCTIONS:\n'+
+          '1. Search and fetch this URL\n'+
+          '2. Find ALL showcase/gallery images on the page (not icons, not avatars, not UI elements)\n'+
+          '3. For ArtStation: images are hosted on cdna.artstation.com, cdnb.artstation.com, etc. Get the FULL SIZE URLs (containing /large/ or /4k/ in the path, NOT /small/ or /medium/)\n'+
+          '4. For other platforms: get the highest resolution direct image URLs available\n'+
+          '5. Include ALL gallery/showcase images, not just 3-5\n\n'+
+          'Respond ONLY with a JSON object (no markdown, no backticks, no explanation before or after):\n'+
+          '{\n'+
+          '  "title": "Product/artwork name",\n'+
+          '  "category": "One of: Style Reference, Packaging, Technique, Color Palette, Branding",\n'+
+          '  "tags": "comma-separated tags: software used, art style, medium, technique (max 8 tags)",\n'+
+          '  "images": "comma-separated direct image URLs — ALL showcase images from the page, full resolution",\n'+
+          '  "notes": "2-3 short sentences: what tools/software were used, what makes this useful for a Look Dev / 3D artist, key techniques shown",\n'+
+          '  "price": "price if listed, or empty string",\n'+
+          '  "platform": "ArtStation / Blender Market / Gumroad / etc",\n'+
+          '  "link_title": "platform name for display"\n'+
+          '}\n\nONLY the JSON object. Nothing else.'}]
       })
     });
 
@@ -981,6 +992,18 @@ async function aiAutoFillReference(){
     if(result.images)document.getElementById('f-ref-img').value=result.images;
     document.getElementById('f-ref-link').value=url;
     if(result.link_title||result.platform)document.getElementById('f-ref-linktitle').value=result.link_title||result.platform||'';
+
+    // Show image previews from AI results
+    if(result.images){
+      const grid=document.getElementById('img-preview-grid');
+      if(grid){
+        const imgUrls=result.images.split(',').map(u=>u.trim()).filter(Boolean);
+        grid.innerHTML=imgUrls.map((imgUrl,i)=>{
+          const pid='ai-img-'+i;
+          return '<div class="img-preview-item" id="'+pid+'"><img src="'+imgUrl+'" onerror="this.parentElement.remove()"><button class="img-remove" onclick="removeExistingImage(\''+pid+'\')">×</button></div>';
+        }).join('');
+      }
+    }
 
     status.className='ai-status success';
     const priceNote=result.price?' · Price: '+result.price:'';
@@ -1503,8 +1526,13 @@ async function saveImageNote(refId,imgIdx,noteText){
   if(!ref)return;
   const notes=parseImageNotes(ref.image_notes);
   if(noteText)notes[imgIdx]=noteText;else delete notes[imgIdx];
-  const notesJson=JSON.stringify(notes);
+  const notesJson=Object.keys(notes).length?JSON.stringify(notes):'';
   const rowIndex=DATA.references.indexOf(ref)+2;
+  // Ensure column K header exists
+  if(!saveImageNote._headerChecked){
+    await updateCell('References','K1','image_notes');
+    saveImageNote._headerChecked=true;
+  }
   const ok=await updateCell('References','K'+rowIndex,notesJson);
   if(ok){
     ref.image_notes=notesJson;
