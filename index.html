@@ -949,7 +949,11 @@ async function fetchAndUploadImage(imageUrl,boardName){
   const proxyUrl=localStorage.getItem('omer_apps_script_url');
   if(proxyUrl){
     try{
-      const proxyResp=await fetch(proxyUrl+'?action=proxy&url='+encodeURIComponent(imageUrl));
+      const proxyResp=await fetch(proxyUrl,{
+        method:'POST',
+        headers:{'Content-Type':'text/plain'},
+        body:JSON.stringify({action:'proxy',url:imageUrl})
+      });
       if(proxyResp.ok){
         const data=await proxyResp.json();
         if(data.success&&data.base64){
@@ -1034,44 +1038,24 @@ const ANTHROPIC_API_URL='https://api.anthropic.com/v1/messages';
 
 // Direct image extraction from known platforms
 async function extractArtStationImages(url){
-  // Try Apps Script proxy first (bypasses CORS)
+  // Use Apps Script proxy (POST to avoid Google stripping GET params)
   const proxyUrl=localStorage.getItem('omer_apps_script_url');
   if(proxyUrl){
     try{
-      const resp=await fetch(proxyUrl+'?action=extract&url='+encodeURIComponent(url));
+      const resp=await fetch(proxyUrl,{
+        method:'POST',
+        headers:{'Content-Type':'text/plain'},
+        body:JSON.stringify({action:'extract',url:url})
+      });
       if(resp.ok){
         const data=await resp.json();
+        console.log('Proxy extract result:',data);
         if(data.success&&data.images&&data.images.length)return data.images;
+        if(data.error)console.warn('Proxy error:',data.error);
       }
     }catch(e){console.log('Apps Script extract failed:',e.message)}
   }
-  
-  // Fallback: try direct ArtStation JSON API (may fail due to CORS)
-  const images=[];
-  let hash=null;
-  const artMatch=url.match(/artstation\.com\/artwork\/([a-zA-Z0-9]+)/);
-  if(artMatch)hash=artMatch[1];
-  const mktMatch=url.match(/artstation\.com\/marketplace\/p\/([a-zA-Z0-9]+)/);
-  if(mktMatch)hash=mktMatch[1];
-  if(!hash)return images;
-
-  const endpoints=[
-    'https://www.artstation.com/projects/'+hash+'.json',
-    'https://www.artstation.com/marketplace/p/'+hash+'.json'
-  ];
-  for(const ep of endpoints){
-    try{
-      const resp=await fetch(ep,{headers:{'Accept':'application/json'}});
-      if(!resp.ok)continue;
-      const data=await resp.json();
-      if(data.assets)data.assets.forEach(a=>{if(a.image_url)images.push(a.image_url.replace(/\/small\//g,'/large/').replace(/\/medium\//g,'/large/'))});
-      if(data.product_images)data.product_images.forEach(a=>{const u=a.image_url||a.url;if(u)images.push(u)});
-      if(data.images)data.images.forEach(a=>{const u=a.image_url||a.url;if(u)images.push(u)});
-      if(data.cover&&data.cover.image_url)images.unshift(data.cover.image_url);
-      if(images.length)return images;
-    }catch(e){continue}
-  }
-  return images;
+  return [];
 }
 
 document.getElementById('form-modal').addEventListener('click',function(e){
