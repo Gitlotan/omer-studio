@@ -1029,6 +1029,101 @@ function removeExistingImage(previewId){
 // CLAUDE AI AUTO-FILL
 const ANTHROPIC_API_URL='https://api.anthropic.com/v1/messages';
 
+// Direct image extraction from known platforms
+async function extractArtStationImages(url){
+  const images=[];
+  
+  // ArtStation artwork: /artwork/HASH or /projects/HASH
+  let hash=null;
+  let apiUrl=null;
+  
+  // Match artwork pages
+  const artMatch=url.match(/artstation\.com\/artwork\/([a-zA-Z0-9]+)/);
+  if(artMatch){
+    hash=artMatch[1];
+    apiUrl='https://www.artstation.com/projects/'+hash+'.json';
+  }
+  
+  // Match marketplace pages: /marketplace/p/HASH/slug
+  const mktMatch=url.match(/artstation\.com\/marketplace\/p\/([a-zA-Z0-9]+)/);
+  if(mktMatch){
+    hash=mktMatch[1];
+    // Marketplace uses a different API endpoint
+    apiUrl='https://www.artstation.com/marketplace/p/'+hash+'.json';
+  }
+
+  if(!apiUrl)return images;
+
+  try{
+    const resp=await fetch(apiUrl,{headers:{'Accept':'application/json'}});
+    if(!resp.ok){
+      // Try alternative endpoint for marketplace
+      if(mktMatch){
+        const altResp=await fetch('https://www.artstation.com/marketplace/products/'+hash+'.json',{headers:{'Accept':'application/json'}});
+        if(altResp.ok){
+          const data=await altResp.json();
+          return extractImagesFromArtStationJson(data);
+        }
+      }
+      throw new Error('API returned '+resp.status);
+    }
+    const data=await resp.json();
+    return extractImagesFromArtStationJson(data);
+  }catch(e){
+    console.log('ArtStation API failed:',e.message);
+    // Fallback: try to fetch the page HTML and extract og:image
+    try{
+      const pageResp=await fetch(url);
+      if(pageResp.ok){
+        const html=await pageResp.text();
+        // Extract og:image
+        const ogMatch=html.match(/<meta[^>]*property=["']og:image["'][^>]*content=["']([^"']+)["']/i);
+        if(ogMatch)images.push(ogMatch[1]);
+        // Extract all CDN image URLs from the HTML
+        const cdnMatches=html.matchAll(/https:\/\/cdn[a-z]\.artstation\.com\/p\/assets\/images\/images\/[^\s"'<>]+/g);
+        for(const m of cdnMatches){
+          const imgUrl=m[0].replace(/\/small\//g,'/large/').replace(/\/medium\//g,'/large/');
+          if(!images.includes(imgUrl))images.push(imgUrl);
+        }
+      }
+    }catch(e2){console.log('HTML fallback failed:',e2.message)}
+  }
+  return images;
+}
+
+function extractImagesFromArtStationJson(data){
+  const images=[];
+  // Handle artwork format (assets array)
+  if(data.assets){
+    for(const asset of data.assets){
+      if(asset.image_url){
+        // Get large version
+        const url=asset.image_url.replace(/\/small\//g,'/large/').replace(/\/medium\//g,'/large/');
+        images.push(url);
+      }
+    }
+  }
+  // Handle marketplace format (may have different structure)
+  if(data.images){
+    for(const img of data.images){
+      const url=(img.image_url||img.url||'').replace(/\/small\//g,'/large/').replace(/\/medium\//g,'/large/');
+      if(url)images.push(url);
+    }
+  }
+  // Check for cover image
+  if(data.cover&&data.cover.image_url&&!images.includes(data.cover.image_url)){
+    images.unshift(data.cover.image_url);
+  }
+  // Marketplace product images
+  if(data.product_images){
+    for(const img of data.product_images){
+      const url=(img.image_url||img.url||'');
+      if(url&&!images.includes(url))images.push(url);
+    }
+  }
+  return images;
+}
+
 document.getElementById('form-modal').addEventListener('click',function(e){
   const el=e.target.closest('[data-action="ai-fill"]');
   if(!el)return;
@@ -1046,7 +1141,11 @@ async function aiAutoFillReference(){
 
   btn.disabled=true;
   status.className='ai-status loading';
-  status.innerHTML='<span class="ai-spinner"></span> Claude is analyzing the page...';
+  status.innerHTML='<span class="ai-spinner"></span> Analyzing page...';
+
+  // Try to extract images directly from ArtStation API first
+  let directImages=[];
+  try{directImages=await extractArtStationImages(url)}catch(e){console.log('Direct extraction:',e.message)}
 
   try{
     const apiKey=getAnthropicKey();
@@ -1119,37 +1218,11 @@ async function aiAutoFillReference(){
       }
     }
 
-    if(!result)throw new Error('Could not extract data from the page. Try using the Chat feature below for a more interactive approach.');
+    if(!result)throw new Error('Could not extract data. Try using Chat below.');
 
-    // If no images found, try a second focused search for images
-    if(!result.images||result.images.trim()===''){
-      status.innerHTML='<span class="ai-spinner"></span> Searching for images...';
-      try{
-        let imgMessages=[{role:'user',content:'Find the direct image URLs from this page: '+url+'\n\n'+
-          'I need the actual image file URLs (ending in .jpg, .png, .webp or hosted on CDNs like cdna.artstation.com, cdnb.artstation.com, images.squarespace-cdn.com, etc).\n'+
-          'Search for "'+result.title+'" images on the same platform.\n\n'+
-          'Respond with ONLY a JSON object: {"images":"url1, url2, url3"}\nNothing else.'}];
-        for(let t=0;t<3;t++){
-          const imgResp=await fetch(ANTHROPIC_API_URL,{method:'POST',headers,
-            body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:2000,tools:[{type:'web_search_20250305',name:'web_search'}],messages:imgMessages})});
-          if(!imgResp.ok)break;
-          const imgData=await imgResp.json();
-          if(imgData.stop_reason==='end_turn'){
-            const imgText=imgData.content.filter(b=>b.type==='text').map(b=>b.text).join('\n');
-            const imgJson=imgText.match(/\{[\s\S]*\}/);
-            if(imgJson){
-              const imgResult=JSON.parse(imgJson[0]);
-              if(imgResult.images)result.images=imgResult.images;
-            }
-            break;
-          }
-          imgMessages.push({role:'assistant',content:imgData.content});
-          const toolBlocks=imgData.content.filter(b=>b.type==='tool_use');
-          if(toolBlocks.length){
-            imgMessages.push({role:'user',content:toolBlocks.map(tb=>({type:'tool_result',tool_use_id:tb.id,content:'Done. Now provide the JSON with image URLs.'}))});
-          }else break;
-        }
-      }catch(imgErr){console.warn('Image search failed:',imgErr)}
+    // Use directly extracted images if Claude didn't find any
+    if(directImages.length&&(!result.images||result.images.trim()==='')){
+      result.images=directImages.join(', ');
     }
 
     // Fill form
