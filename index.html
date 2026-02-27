@@ -929,6 +929,92 @@ function syncImageUrlField(){
   field.value=allUrls.join(', ');
 }
 
+// FETCH REMOTE IMAGE AND UPLOAD TO DRIVE (via Apps Script proxy to bypass CORS)
+const APPS_SCRIPT_PROXY=localStorage.getItem('omer_apps_script_url')||'';
+
+async function fetchAndUploadImage(imageUrl,boardName){
+  if(!accessToken)return null;
+
+  // Method 1: Try direct fetch (works for some CDNs)
+  try{
+    const resp=await fetch(imageUrl,{mode:'cors'});
+    if(resp.ok){
+      const blob=await resp.blob();
+      if(blob.size>0&&blob.type.startsWith('image/')){
+        return await uploadBlobToDrive(blob,boardName,imageUrl);
+      }
+    }
+  }catch(e){console.log('Direct fetch failed (CORS):',e.message)}
+
+  // Method 2: Use Apps Script proxy
+  if(APPS_SCRIPT_PROXY){
+    try{
+      const proxyResp=await fetch(APPS_SCRIPT_PROXY+'?url='+encodeURIComponent(imageUrl));
+      if(proxyResp.ok){
+        const data=await proxyResp.json();
+        if(data.success&&data.driveUrl){
+          uploadedImageUrls.push(data.driveUrl);
+          return data.driveUrl;
+        }
+      }
+    }catch(e){console.log('Apps Script proxy failed:',e.message)}
+  }
+
+  // Method 3: Use canvas trick (works if image loads in img tag even without CORS)
+  try{
+    return await new Promise((resolve,reject)=>{
+      const img=new Image();
+      img.crossOrigin='anonymous';
+      img.onload=()=>{
+        try{
+          const canvas=document.createElement('canvas');
+          canvas.width=img.naturalWidth;
+          canvas.height=img.naturalHeight;
+          canvas.getContext('2d').drawImage(img,0,0);
+          canvas.toBlob(async blob=>{
+            if(blob){
+              const driveUrl=await uploadBlobToDrive(blob,boardName,imageUrl);
+              resolve(driveUrl);
+            }else reject(new Error('Canvas blob failed'));
+          },'image/jpeg',0.92);
+        }catch(e){reject(e)}
+      };
+      img.onerror=()=>reject(new Error('Image load failed'));
+      // Add timestamp to bypass cache
+      img.src=imageUrl+(imageUrl.includes('?')?'&':'?')+'_t='+Date.now();
+      setTimeout(()=>reject(new Error('Timeout')),10000);
+    });
+  }catch(e){console.log('Canvas method failed:',e.message)}
+
+  // All methods failed — keep original URL
+  return null;
+}
+
+async function uploadBlobToDrive(blob,boardName,originalUrl){
+  try{
+    const refsFolderId=await getSharedDriveRefs();
+    const safeName=(boardName||'Unsorted').replace(/[^a-zA-Z0-9\u0590-\u05FF _-]/g,'_');
+    const boardFolderId=await findOrCreateFolder(refsFolderId,safeName,sharedDriveId);
+    // Extract filename from URL
+    const urlPath=new URL(originalUrl).pathname;
+    const fileName=Date.now()+'_'+(urlPath.split('/').pop()||'image.jpg').replace(/[^a-zA-Z0-9._-]/g,'_');
+    const metadata={name:fileName,parents:[boardFolderId]};
+    const form=new FormData();
+    form.append('metadata',new Blob([JSON.stringify(metadata)],{type:'application/json'}));
+    form.append('file',blob);
+    const resp=await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id&supportsAllDrives=true',{
+      method:'POST',headers:{'Authorization':'Bearer '+accessToken},body:form});
+    if(!resp.ok)throw new Error('Upload failed');
+    const data=await resp.json();
+    // Make public
+    await fetch('https://www.googleapis.com/drive/v3/files/'+data.id+'/permissions?supportsAllDrives=true',{method:'POST',headers:{'Authorization':'Bearer '+accessToken,'Content-Type':'application/json'},
+      body:JSON.stringify({role:'reader',type:'anyone'})}).catch(()=>{});
+    const driveUrl='https://drive.google.com/thumbnail?id='+data.id+'&sz=w800';
+    uploadedImageUrls.push(driveUrl);
+    return driveUrl;
+  }catch(e){console.error('uploadBlobToDrive error:',e);return null}
+}
+
 function removeExistingImage(previewId){
   const el=document.getElementById(previewId);
   if(!el)return;
@@ -1080,23 +1166,58 @@ async function aiAutoFillReference(){
     document.getElementById('f-ref-link').value=url;
     if(result.link_title||result.platform)document.getElementById('f-ref-linktitle').value=result.link_title||result.platform||'';
 
-    // Show image previews from AI results
-    if(result.images){
+    // Try to download images and upload to Google Drive
+    if(result.images&&accessToken){
+      const imgUrls=result.images.split(',').map(u=>u.trim()).filter(Boolean);
+      status.className='ai-status loading';
+      status.innerHTML='<span class="ai-spinner"></span> Uploading '+imgUrls.length+' images to Google Drive...';
+      const boardName=result.title||'AI Reference';
+      const driveUrls=[];
+      const failedUrls=[];
+      for(let i=0;i<imgUrls.length;i++){
+        status.innerHTML='<span class="ai-spinner"></span> Uploading image '+(i+1)+'/'+imgUrls.length+' to Drive...';
+        try{
+          const driveUrl=await fetchAndUploadImage(imgUrls[i],boardName);
+          if(driveUrl)driveUrls.push(driveUrl);
+          else failedUrls.push(imgUrls[i]);
+        }catch(e){
+          console.warn('Failed to upload image:',imgUrls[i],e);
+          failedUrls.push(imgUrls[i]);
+        }
+      }
+      // Update image field with Drive URLs + any that failed (kept as original)
+      const allUrls=[...driveUrls,...failedUrls];
+      document.getElementById('f-ref-img').value=allUrls.join(', ');
+      syncImageUrlField();
+      // Show previews
+      const grid=document.getElementById('img-preview-grid');
+      if(grid){
+        grid.innerHTML=allUrls.map((imgUrl,i)=>{
+          const pid='ai-img-'+i;
+          const isDrive=imgUrl.includes('drive.google.com');
+          return '<div class="img-preview-item" id="'+pid+'" style="position:relative"><img src="'+imgUrl+'" onerror="this.style.display=\'none\';this.nextElementSibling.style.display=\'flex\'"><div style="display:none;width:100%;height:100%;align-items:center;justify-content:center;background:var(--bg);font-size:9px;color:var(--text-muted);text-align:center;padding:4px">'+(isDrive?'✓ Drive':'⚠️ URL')+'</div><button class="img-remove" onclick="removeExistingImage(\''+pid+'\')">×</button></div>';
+        }).join('');
+      }
+      status.className='ai-status success';
+      const priceNote=result.price?' · Price: '+result.price:'';
+      status.textContent='✓ Form filled'+(result.platform?' from '+result.platform:'')+priceNote+'. '+driveUrls.length+' images uploaded to Drive'+(failedUrls.length?', '+failedUrls.length+' kept as URLs (CORS blocked)':'')+'.';
+    }else if(result.images){
+      // Not signed in — just show URL previews
       const grid=document.getElementById('img-preview-grid');
       if(grid){
         const imgUrls=result.images.split(',').map(u=>u.trim()).filter(Boolean);
         grid.innerHTML=imgUrls.map((imgUrl,i)=>{
           const pid='ai-img-'+i;
-          const shortUrl=imgUrl.length>40?imgUrl.substring(0,20)+'...'+imgUrl.substring(imgUrl.length-15):imgUrl;
-          return '<div class="img-preview-item" id="'+pid+'" style="position:relative"><img src="'+imgUrl+'" onerror="this.style.display=\'none\';this.nextElementSibling.style.display=\'flex\'"><div style="display:none;width:100%;height:100%;align-items:center;justify-content:center;background:var(--bg);font-size:9px;color:var(--text-muted);text-align:center;padding:4px;word-break:break-all" title="'+imgUrl+'">🖼️</div><button class="img-remove" onclick="removeExistingImage(\''+pid+'\')">×</button></div>';
+          return '<div class="img-preview-item" id="'+pid+'" style="position:relative"><img src="'+imgUrl+'" onerror="this.style.display=\'none\';this.nextElementSibling.style.display=\'flex\'"><div style="display:none;width:100%;height:100%;align-items:center;justify-content:center;background:var(--bg);font-size:9px;color:var(--text-muted);text-align:center;padding:4px">🖼️</div><button class="img-remove" onclick="removeExistingImage(\''+pid+'\')">×</button></div>';
         }).join('');
-        status.innerHTML+=' · '+imgUrls.length+' images found';
       }
     }
 
-    status.className='ai-status success';
-    const priceNote=result.price?' · Price: '+result.price:'';
-    status.textContent='✓ Form filled'+(result.platform?' from '+result.platform:'')+priceNote+'. Review and edit before saving.';
+    if(!result.images||!accessToken){
+      status.className='ai-status success';
+      const priceNote=result.price?' · Price: '+result.price:'';
+      status.textContent='✓ Form filled'+(result.platform?' from '+result.platform:'')+priceNote+'. Review and edit before saving.';
+    }
     btn.disabled=false;
 
   }catch(e){
