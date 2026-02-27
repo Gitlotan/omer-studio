@@ -187,9 +187,10 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text-prim
 .ref-card-footer{display:flex;align-items:center;justify-content:space-between}
 .ref-card-cat{padding:3px 10px;border-radius:20px;font-size:10.5px;font-weight:600;background:var(--accent-soft);color:var(--accent)}
 .ref-card-meta{font-size:11px;color:var(--text-muted)}
-.ref-card-note-badge{position:absolute;top:8px;left:8px;display:flex;align-items:center;gap:4px;padding:4px 8px;border-radius:12px;background:rgba(0,0,0,.7);color:#fff;font-size:10px;backdrop-filter:blur(4px);z-index:1;cursor:default}
-.ref-card-note-badge svg{width:12px;height:12px;stroke:#fff;fill:none;stroke-width:2}
-.ref-card-note-tooltip{display:none;position:absolute;top:calc(100% + 6px);left:0;background:rgba(0,0,0,.9);color:#fff;padding:8px 12px;border-radius:var(--radius-sm);font-size:11px;line-height:1.5;max-width:220px;white-space:pre-wrap;word-break:break-word;z-index:10;box-shadow:var(--shadow-lg)}
+.ref-card-note-badge{position:absolute;bottom:8px;right:8px;display:flex;align-items:center;gap:4px;padding:4px 10px;border-radius:12px;background:rgba(0,0,0,.75);color:#fff;font-size:11px;backdrop-filter:blur(4px);z-index:1;cursor:default;white-space:nowrap}
+.ref-card-note-badge svg{width:12px;height:12px;stroke:#fff;fill:none;stroke-width:2;flex-shrink:0}
+.ref-card-note-tooltip{display:none;position:absolute;bottom:calc(100% + 8px);right:0;background:rgba(0,0,0,.92);color:#fff;padding:10px 14px;border-radius:var(--radius-sm);font-size:12px;line-height:1.5;width:240px;white-space:normal;word-break:break-word;z-index:10;box-shadow:var(--shadow-lg)}
+.ref-card-note-tooltip::after{content:'';position:absolute;top:100%;right:12px;border:6px solid transparent;border-top-color:rgba(0,0,0,.92)}
 .ref-card-note-badge:hover .ref-card-note-tooltip{display:block}
 .ref-tags{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
 .ref-tag{padding:2px 8px;border-radius:12px;font-size:10.5px;background:var(--bg);color:var(--text-muted);border:1px solid var(--card-border)}
@@ -1033,6 +1034,37 @@ async function aiAutoFillReference(){
     }
 
     if(!result)throw new Error('Could not extract data from the page. Try using the Chat feature below for a more interactive approach.');
+
+    // If no images found, try a second focused search for images
+    if(!result.images||result.images.trim()===''){
+      status.innerHTML='<span class="ai-spinner"></span> Searching for images...';
+      try{
+        let imgMessages=[{role:'user',content:'Find the direct image URLs from this page: '+url+'\n\n'+
+          'I need the actual image file URLs (ending in .jpg, .png, .webp or hosted on CDNs like cdna.artstation.com, cdnb.artstation.com, images.squarespace-cdn.com, etc).\n'+
+          'Search for "'+result.title+'" images on the same platform.\n\n'+
+          'Respond with ONLY a JSON object: {"images":"url1, url2, url3"}\nNothing else.'}];
+        for(let t=0;t<3;t++){
+          const imgResp=await fetch(ANTHROPIC_API_URL,{method:'POST',headers,
+            body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:2000,tools:[{type:'web_search_20250305',name:'web_search'}],messages:imgMessages})});
+          if(!imgResp.ok)break;
+          const imgData=await imgResp.json();
+          if(imgData.stop_reason==='end_turn'){
+            const imgText=imgData.content.filter(b=>b.type==='text').map(b=>b.text).join('\n');
+            const imgJson=imgText.match(/\{[\s\S]*\}/);
+            if(imgJson){
+              const imgResult=JSON.parse(imgJson[0]);
+              if(imgResult.images)result.images=imgResult.images;
+            }
+            break;
+          }
+          imgMessages.push({role:'assistant',content:imgData.content});
+          const toolBlocks=imgData.content.filter(b=>b.type==='tool_use');
+          if(toolBlocks.length){
+            imgMessages.push({role:'user',content:toolBlocks.map(tb=>({type:'tool_result',tool_use_id:tb.id,content:'Done. Now provide the JSON with image URLs.'}))});
+          }else break;
+        }
+      }catch(imgErr){console.warn('Image search failed:',imgErr)}
+    }
 
     // Fill form
     if(result.title)document.getElementById('f-ref-title').value=result.title;
