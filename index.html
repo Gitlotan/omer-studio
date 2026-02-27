@@ -187,6 +187,10 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text-prim
 .ref-card-footer{display:flex;align-items:center;justify-content:space-between}
 .ref-card-cat{padding:3px 10px;border-radius:20px;font-size:10.5px;font-weight:600;background:var(--accent-soft);color:var(--accent)}
 .ref-card-meta{font-size:11px;color:var(--text-muted)}
+.ref-card-note-badge{position:absolute;top:8px;left:8px;display:flex;align-items:center;gap:4px;padding:4px 8px;border-radius:12px;background:rgba(0,0,0,.7);color:#fff;font-size:10px;backdrop-filter:blur(4px);z-index:1;cursor:default}
+.ref-card-note-badge svg{width:12px;height:12px;stroke:#fff;fill:none;stroke-width:2}
+.ref-card-note-tooltip{display:none;position:absolute;top:calc(100% + 6px);left:0;background:rgba(0,0,0,.9);color:#fff;padding:8px 12px;border-radius:var(--radius-sm);font-size:11px;line-height:1.5;max-width:220px;white-space:pre-wrap;word-break:break-word;z-index:10;box-shadow:var(--shadow-lg)}
+.ref-card-note-badge:hover .ref-card-note-tooltip{display:block}
 .ref-tags{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
 .ref-tag{padding:2px 8px;border-radius:12px;font-size:10.5px;background:var(--bg);color:var(--text-muted);border:1px solid var(--card-border)}
 /* Gallery */
@@ -301,6 +305,23 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text-prim
 .ai-status.success{display:block;background:var(--success-soft);color:var(--success);border:1px solid var(--success)}
 .ai-status.error{display:block;background:var(--danger-soft);color:var(--danger);border:1px solid var(--danger)}
 .ai-status .ai-spinner{display:inline-block;width:14px;height:14px;border:2px solid var(--card-border);border-top-color:var(--accent);border-radius:50%;animation:spin .6s linear infinite;vertical-align:middle;margin-right:6px}
+/* Claude Mini Chat */
+.ai-chat-panel{display:none;background:var(--card-bg);border:1px solid var(--accent);border-radius:var(--radius);margin-top:12px;overflow:hidden}
+.ai-chat-panel.open{display:block}
+.ai-chat-header{display:flex;align-items:center;gap:8px;padding:10px 14px;background:linear-gradient(135deg,#f7f0e8,#ede4d8);border-bottom:1px solid var(--card-border);font-size:12px;font-weight:600;color:var(--accent)}
+.ai-chat-header .ai-icon{width:22px;height:22px;border-radius:6px;background:linear-gradient(135deg,#D4956A,#C4856A);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.ai-chat-header .ai-icon svg{width:12px;height:12px;stroke:#fff;fill:none}
+.ai-chat-header .ai-chat-close{margin-left:auto;background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:16px;line-height:1;padding:2px 6px}
+.ai-chat-messages{max-height:200px;overflow-y:auto;padding:12px 14px;display:flex;flex-direction:column;gap:8px}
+.ai-chat-msg{padding:8px 12px;border-radius:var(--radius-sm);font-size:12px;line-height:1.5;max-width:90%}
+.ai-chat-msg.user{background:var(--accent-soft);color:var(--text-primary);align-self:flex-end;border-bottom-right-radius:4px}
+.ai-chat-msg.assistant{background:var(--bg);color:var(--text-primary);align-self:flex-start;border-bottom-left-radius:4px}
+.ai-chat-msg.thinking{color:var(--text-muted);font-style:italic}
+.ai-chat-input-row{display:flex;gap:8px;padding:10px 14px;border-top:1px solid var(--card-border);background:var(--bg)}
+.ai-chat-input-row input{flex:1;padding:8px 12px;border:1px solid var(--card-border);border-radius:var(--radius-sm);font-size:12px;font-family:'DM Sans',sans-serif;background:var(--card-bg);color:var(--text-primary);outline:none}
+.ai-chat-input-row input:focus{border-color:var(--accent)}
+.ai-chat-input-row button{padding:8px 14px;border-radius:var(--radius-sm);border:none;background:var(--accent);color:#fff;font-size:12px;font-weight:500;cursor:pointer;font-family:'DM Sans',sans-serif}
+.ai-chat-input-row button:disabled{opacity:.5}
 /* Toast */
 .toast{position:fixed;bottom:24px;right:24px;padding:14px 22px;border-radius:var(--radius);background:var(--sidebar-bg);color:#fff;font-size:13px;font-weight:500;box-shadow:var(--shadow-lg);z-index:2000;transform:translateY(100px);opacity:0;transition:all .3s ease;display:flex;align-items:center;gap:10px}
 .toast.show{transform:translateY(0);opacity:1}
@@ -745,6 +766,12 @@ function openAddForm(type){
         '<div class="ai-fill-header"><div class="ai-icon"><span class="ic ic-sm"><svg><use href="#i-sparkle"/></svg></span></div><div class="ai-label">Auto-fill with AI</div><div class="ai-hint">Paste a URL and let Claude fill the form</div></div>'+
         '<div class="ai-fill-row"><input class="form-input" id="f-ai-url" placeholder="https://artstation.com/marketplace/... or any product page"><button class="btn-ai" id="btn-ai-fill" data-action="ai-fill"><span class="ic ic-sm"><svg><use href="#i-sparkle"/></svg></span> Auto-fill</button></div>'+
         '<div class="ai-status" id="ai-status"></div>'+
+        '<div class="ai-chat-panel" id="ai-chat-panel">'+
+          '<div class="ai-chat-header"><div class="ai-icon"><span class="ic ic-sm"><svg><use href="#i-sparkle"/></svg></span></div>Chat with Claude<button class="ai-chat-close" data-action="ai-chat-close">×</button></div>'+
+          '<div class="ai-chat-messages" id="ai-chat-messages"></div>'+
+          '<div class="ai-chat-input-row"><input id="ai-chat-input" placeholder="Ask Claude anything about this reference..." onkeydown="if(event.key===\'Enter\')document.querySelector(\'[data-action=ai-chat-send]\').click()"><button data-action="ai-chat-send">Send</button></div>'+
+        '</div>'+
+        '<button class="btn-ai" data-action="ai-chat-toggle" style="margin-top:8px;width:100%;justify-content:center;background:transparent;color:var(--accent);border:1px dashed var(--accent)"><span class="ic ic-sm"><svg><use href="#i-sparkle"/></svg></span> Chat with Claude about this reference</button>'+
       '</div>'+
       '<div class="form-group"><label class="form-label">Title *</label><input class="form-input" id="f-ref-title" placeholder="Reference name"></div>'+
       '<div class="form-group"><label class="form-label">Category</label><select class="form-select" id="f-ref-cat"><option value="">Select category</option><option>Style Reference</option><option>Packaging</option><option>Technique</option><option>Color Palette</option><option>Branding</option></select></div>'+
@@ -779,7 +806,7 @@ function openAddForm(type){
   document.body.style.overflow='hidden';
   setTimeout(()=>{const fi=fm.querySelector('.form-input');if(fi)fi.focus()},100);
 }
-function closeForm(){document.getElementById('form-overlay').classList.remove('open');document.body.style.overflow='';editingRefId=null;uploadedImageUrls=[]}
+function closeForm(){document.getElementById('form-overlay').classList.remove('open');document.body.style.overflow='';editingRefId=null;uploadedImageUrls=[];aiChatHistory=[]}
 function showFormError(msg){const el=document.getElementById('form-error');el.textContent=msg;el.style.display='block'}
 
 // IMAGE UPLOAD TO GOOGLE DRIVE
@@ -975,9 +1002,14 @@ async function aiAutoFillReference(){
     const textBlock=data.content?.find(b=>b.type==='text');
     if(!textBlock)throw new Error('No response from Claude');
 
+    // Extract JSON from response — Claude may include text before/after
     let jsonStr=textBlock.text.trim();
-    if(jsonStr.startsWith('```'))jsonStr=jsonStr.replace(/```json?\n?/,'').replace(/\n?```$/,'').trim();
-    const result=JSON.parse(jsonStr);
+    // Remove markdown code blocks
+    if(jsonStr.includes('```'))jsonStr=jsonStr.replace(/```json?\s*/g,'').replace(/```/g,'').trim();
+    // Find JSON object in the text
+    const jsonMatch=jsonStr.match(/\{[\s\S]*\}/);
+    if(!jsonMatch)throw new Error('Could not find JSON in response. Claude said: '+jsonStr.substring(0,100));
+    const result=JSON.parse(jsonMatch[0]);
 
     // Fill form
     if(result.title)document.getElementById('f-ref-title').value=result.title;
@@ -1024,6 +1056,150 @@ function getAnthropicKey(){
   key=prompt('Enter your Anthropic API key for AI features.\nGet one at console.anthropic.com/settings/keys\n\nSaved as cookie for 30 days.');
   if(key){setCookie('omer_anthropic_key',key.trim(),86400*30);return key.trim()}
   return null;
+}
+
+// CLAUDE MINI CHAT
+let aiChatHistory=[];
+
+document.getElementById('form-modal').addEventListener('click',function(e){
+  const el=e.target.closest('[data-action]');
+  if(!el)return;
+  const action=el.dataset.action;
+  if(action==='ai-chat-toggle'){
+    const panel=document.getElementById('ai-chat-panel');
+    if(panel){panel.classList.toggle('open');if(panel.classList.contains('open'))document.getElementById('ai-chat-input')?.focus()}
+  }
+  else if(action==='ai-chat-close'){
+    document.getElementById('ai-chat-panel')?.classList.remove('open');
+  }
+  else if(action==='ai-chat-send'){
+    aiChatSend();
+  }
+});
+
+function getFormContext(){
+  const fields={
+    title:document.getElementById('f-ref-title')?.value||'',
+    category:document.getElementById('f-ref-cat')?.value||'',
+    notes:document.getElementById('f-ref-notes')?.value||'',
+    tags:document.getElementById('f-ref-tags')?.value||'',
+    images:document.getElementById('f-ref-img')?.value||'',
+    link:document.getElementById('f-ref-link')?.value||'',
+    link_title:document.getElementById('f-ref-linktitle')?.value||'',
+    ai_url:document.getElementById('f-ai-url')?.value||''
+  };
+  return fields;
+}
+
+function applyFormUpdates(updates){
+  if(updates.title)document.getElementById('f-ref-title').value=updates.title;
+  if(updates.category){
+    const sel=document.getElementById('f-ref-cat');
+    const opts=[...sel.options];
+    const match=opts.find(o=>o.value===updates.category)||opts.find(o=>o.value.toLowerCase().includes((updates.category||'').toLowerCase().split(' ')[0]));
+    if(match)sel.value=match.value;
+  }
+  if(updates.notes!=null)document.getElementById('f-ref-notes').value=updates.notes;
+  if(updates.tags)document.getElementById('f-ref-tags').value=updates.tags;
+  if(updates.images){
+    document.getElementById('f-ref-img').value=updates.images;
+    // Show previews
+    const grid=document.getElementById('img-preview-grid');
+    if(grid){
+      const imgUrls=updates.images.split(',').map(u=>u.trim()).filter(Boolean);
+      grid.innerHTML=imgUrls.map((u,i)=>'<div class="img-preview-item" id="ai-img-'+i+'"><img src="'+u+'" onerror="this.parentElement.remove()"><button class="img-remove" onclick="removeExistingImage(\'ai-img-'+i+'\')">×</button></div>').join('');
+    }
+  }
+  if(updates.link)document.getElementById('f-ref-link').value=updates.link;
+  if(updates.link_title)document.getElementById('f-ref-linktitle').value=updates.link_title;
+}
+
+function addChatMessage(role,text){
+  const msgs=document.getElementById('ai-chat-messages');
+  if(!msgs)return;
+  const div=document.createElement('div');
+  div.className='ai-chat-msg '+role;
+  div.textContent=text;
+  msgs.appendChild(div);
+  msgs.scrollTop=msgs.scrollHeight;
+  return div;
+}
+
+async function aiChatSend(){
+  const input=document.getElementById('ai-chat-input');
+  const sendBtn=document.querySelector('[data-action="ai-chat-send"]');
+  const text=input?.value.trim();
+  if(!text)return;
+
+  const apiKey=getAnthropicKey();
+  if(!apiKey)return;
+
+  input.value='';
+  sendBtn.disabled=true;
+  addChatMessage('user',text);
+  const thinkingEl=addChatMessage('assistant thinking','Thinking...');
+
+  // Build context
+  const formData=getFormContext();
+  const systemPrompt='You are an AI assistant integrated into Omer Studio, a creative project dashboard for a Look Development artist studying animation. '+
+    'You are helping fill a Reference Board entry. You can search the web for information.\n\n'+
+    'Current form state:\n'+JSON.stringify(formData,null,2)+'\n\n'+
+    'IMPORTANT: After your helpful text response, if you want to update any form fields, add a line at the very end starting with UPDATE_FORM: followed by a JSON object with only the fields to change. '+
+    'Field names: title, category (Style Reference|Packaging|Technique|Color Palette|Branding), notes, tags, images (comma-separated URLs), link, link_title.\n'+
+    'Example: UPDATE_FORM: {"notes":"Updated notes here","tags":"blender, photoshop"}\n'+
+    'If no form updates needed, just respond with text only.';
+
+  // Add to history
+  aiChatHistory.push({role:'user',content:text});
+
+  try{
+    const response=await fetch(ANTHROPIC_API_URL,{
+      method:'POST',
+      headers:{'Content-Type':'application/json','x-api-key':apiKey,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+      body:JSON.stringify({
+        model:'claude-sonnet-4-20250514',
+        max_tokens:2000,
+        system:systemPrompt,
+        tools:[{type:'web_search_20250305',name:'web_search'}],
+        messages:aiChatHistory
+      })
+    });
+
+    if(!response.ok){
+      const err=await response.json().catch(()=>({}));
+      throw new Error(err.error?.message||'API error');
+    }
+
+    const data=await response.json();
+    const textBlock=data.content?.find(b=>b.type==='text');
+    const fullText=textBlock?.text||'No response';
+
+    // Check for UPDATE_FORM directive
+    let displayText=fullText;
+    const updateMatch=fullText.match(/UPDATE_FORM:\s*(\{[\s\S]*\})\s*$/);
+    if(updateMatch){
+      displayText=fullText.substring(0,updateMatch.index).trim();
+      try{
+        const updates=JSON.parse(updateMatch[1]);
+        applyFormUpdates(updates);
+        displayText+=' ✓ Form updated.';
+      }catch(e){console.error('Failed to parse form update:',e)}
+    }
+
+    // Update chat
+    thinkingEl.textContent=displayText;
+    thinkingEl.classList.remove('thinking');
+    aiChatHistory.push({role:'assistant',content:fullText});
+
+  }catch(e){
+    thinkingEl.textContent='Error: '+e.message;
+    thinkingEl.classList.remove('thinking');
+    // Remove failed message from history
+    aiChatHistory.pop();
+  }
+
+  sendBtn.disabled=false;
+  input?.focus();
 }
 
 function openEditReference(id){
@@ -1388,7 +1564,12 @@ function renderReferences(){
     const catColor=CAT_COLORS[r.category]||'var(--accent)';
     const catBg=CAT_BGS[r.category]||'var(--accent-soft)';
     const tags=(r.tags||'').split(',').filter(Boolean).slice(0,3);
+    const imgNotes=parseImageNotes(r.image_notes);
+    const noteCount=Object.keys(imgNotes).length;
+    const firstNote=noteCount?imgNotes[Object.keys(imgNotes)[0]]:'';
     return'<div class="ref-card" onclick="openRefModal(\''+r.id+'\')">'+
+      (noteCount?'<div class="ref-card-note-badge"><svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>'+noteCount+
+        '<div class="ref-card-note-tooltip">'+firstNote.replace(/</g,'&lt;').replace(/>/g,'&gt;').substring(0,150)+(firstNote.length>150?'...':'')+(noteCount>1?'\n\n+'+(noteCount-1)+' more note'+(noteCount>2?'s':''):'')+'</div></div>':'')+
       (accessToken?'<div class="ref-edit" onclick="event.stopPropagation();openEditReference(\''+r.id+'\')" title="Edit reference"><svg><use href="#i-edit"/></svg></div>'+
       '<div class="ref-delete" onclick="event.stopPropagation();confirmDelete(\'reference\',\''+r.id+'\',\''+r.title.replace(/'/g,'\\\'')+'\')" title="Delete reference"><svg><use href="#i-trash"/></svg></div>':'')+
       (img?'<img class="ref-card-img" src="'+img+'" alt="'+r.title+'" onerror="this.outerHTML=\'<div class=ref-card-img-placeholder><span class=ic><svg><use href=#i-image/></svg></span></div>\'">':'<div class="ref-card-img-placeholder"><span class="ic"><svg><use href="#i-image"/></svg></span></div>')+
