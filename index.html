@@ -213,6 +213,9 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text-prim
 .img-note-badge{position:absolute;bottom:12px;right:12px;display:flex;align-items:center;gap:6px;padding:6px 12px;border-radius:20px;background:rgba(0,0,0,.7);color:#fff;font-size:12px;cursor:pointer;transition:background .15s;backdrop-filter:blur(4px);z-index:2}
 .img-note-badge:hover{background:rgba(0,0,0,.85)}
 .img-note-badge svg{width:14px;height:14px;stroke:#fff;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.img-note-badge .note-tooltip{display:none;position:absolute;bottom:calc(100% + 8px);right:0;background:rgba(0,0,0,.9);color:#fff;padding:10px 14px;border-radius:var(--radius-sm);font-size:12px;line-height:1.5;max-width:260px;min-width:120px;white-space:pre-wrap;word-break:break-word;backdrop-filter:blur(6px);box-shadow:var(--shadow-lg);pointer-events:none}
+.img-note-badge .note-tooltip::after{content:'';position:absolute;top:100%;right:16px;border:6px solid transparent;border-top-color:rgba(0,0,0,.9)}
+.img-note-badge:hover .note-tooltip{display:block}
 /* Note section — sits in modal-body, below gallery */
 .img-note-section{background:var(--accent-soft);border:1px solid var(--accent);border-radius:var(--radius);padding:16px;margin-bottom:20px;animation:fadeIn .2s ease}
 .img-note-section-header{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:600;color:var(--accent);margin-bottom:10px}
@@ -1276,7 +1279,9 @@ function openRefModal(id){
       const hasNote=!!imgNotes[i];
       return '<div class="modal-gallery-img-wrap'+(i===0?' active':'')+'" data-img-idx="'+i+'">'+
         '<img src="'+img+'" alt="'+r.title+'" style="width:100%;max-height:400px;object-fit:contain;display:block" onerror="this.style.display=\'none\'">'+
-        '<div class="img-note-badge" data-action="toggle-note" data-idx="'+i+'">'+noteIcon+(hasNote?' <span style="pointer-events:none">Note</span>':'')+'</div>'+
+        '<div class="img-note-badge" data-action="toggle-note" data-idx="'+i+'">'+noteIcon+(hasNote?' <span style="pointer-events:none">Note</span>':'')+
+          (hasNote?'<div class="note-tooltip">'+imgNotes[i].replace(/</g,'&lt;').replace(/>/g,'&gt;')+'</div>':'')+
+        '</div>'+
       '</div>';
     }).join('')+
     (multi?'<div class="modal-gallery-nav"><button data-action="gallery-prev">‹</button><span class="gallery-counter">1 / '+allImgs.length+'</span><button data-action="gallery-next">›</button></div>'+
@@ -1391,14 +1396,18 @@ async function saveImageNote(refId,imgIdx,noteText){
     // Update in-memory data on modal
     const modal=document.getElementById('modal');
     if(modal._imgNotes)modal._imgNotes[imgIdx]=noteText||undefined;
-    // Update badge text
+    // Update badge text and tooltip
     const badge=document.querySelector('[data-action="toggle-note"][data-idx="'+imgIdx+'"]');
     if(badge){
-      const span=badge.querySelector('span:not([style])');
+      let span=badge.querySelector('span[style]');
+      let tooltip=badge.querySelector('.note-tooltip');
       if(noteText){
-        if(!span){const s=document.createElement('span');s.style.pointerEvents='none';s.textContent=' Note';badge.appendChild(s)}
+        if(!span){span=document.createElement('span');span.style.pointerEvents='none';span.textContent=' Note';badge.appendChild(span)}
+        if(!tooltip){tooltip=document.createElement('div');tooltip.className='note-tooltip';badge.appendChild(tooltip)}
+        tooltip.textContent=noteText;
       }else{
         if(span)span.remove();
+        if(tooltip)tooltip.remove();
       }
     }
     showToast('Note saved!','success');
