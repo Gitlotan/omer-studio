@@ -1287,11 +1287,9 @@ function openRefModal(id){
     // Note panel — sits OUTSIDE the gallery, in the modal-body flow
     notePanelHtml='<div class="img-note-section" id="img-note-section" style="display:none">'+
       '<div class="img-note-section-header"><span class="ic ic-sm"><svg><use href="#i-edit"/></svg></span> <span id="note-section-label">Image Note</span></div>'+
-      (accessToken?
-        '<textarea class="img-note-textarea" id="note-textarea-active" placeholder="Add a note about this image..."></textarea>'+
-        '<div class="img-note-actions"><button class="btn-submit" data-action="save-note" style="padding:6px 18px;font-size:12px">Save Note</button>'+
-        '<button class="btn-cancel" data-action="cancel-note" style="padding:6px 14px;font-size:12px">Cancel</button></div>'
-      :'<div class="img-note-readonly" id="note-readonly-text"></div>')+
+      '<textarea class="img-note-textarea" id="note-textarea-active" placeholder="Add a note about this image..."></textarea>'+
+      '<div class="img-note-actions"><button class="btn-submit" data-action="save-note" style="padding:6px 18px;font-size:12px">Save Note</button>'+
+      '<button class="btn-cancel" data-action="cancel-note" style="padding:6px 14px;font-size:12px">Cancel</button></div>'+
     '</div>';
   }else{
     galleryHtml='<div class="modal-img-placeholder"><span class="ic" style="color:var(--text-muted)"><svg style="width:32px;height:32px"><use href="#i-image"/></svg></span></div>';
@@ -1357,11 +1355,8 @@ document.getElementById('modal').addEventListener('click',function(e){
     const noteText=(modal._imgNotes&&modal._imgNotes[idx])||'';
     document.getElementById('note-section-label').textContent='Note for image '+(idx+1);
     const ta=document.getElementById('note-textarea-active');
-    const ro=document.getElementById('note-readonly-text');
-    if(ta)ta.value=noteText;
-    if(ro)ro.textContent=noteText||'No note yet.';
+    if(ta){ta.value=noteText;ta.focus()}
     section.style.display='block';
-    if(ta)ta.focus();
     // Smooth scroll modal to reveal the note section
     setTimeout(()=>{section.scrollIntoView({behavior:'smooth',block:'nearest'})},50);
   }
